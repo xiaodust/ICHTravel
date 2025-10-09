@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: roleplay
+  ai:
+    alibaba:
+      tool calling:
+        time:
+          enabled: true
+        weather:
+          enabled: true
+        webSearch:
+          enabled: true
+
+    dashscope:
+      api-key: sk-4337f91644ea48b6abdadf8bc3ff981c
+      chat:
+        options:
+          model: qwen-plus
+    websearch:
+      api-key: sk-2f044e333ae64ba3b8c5e7bb7103f6e8
+      url: https://api.bochaai.com/v1/web-search
+    weather :
+      api-key: SOhi8eJU_e7CEsHeP
+  datasource:
+    url: jdbc:mysql://111.229.209.82:3306/icht
+    username: icht
+    password: E8NMLcxNnJsnG8pZ
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    type: com.zaxxer.hikari.HikariDataSource
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+logging:
+  level:
+    org:
+      springframework:
+        ai:
+          chat:
+            client:
+              advisor: debug
+    com:
+      dust:
+        roleplay: debug
