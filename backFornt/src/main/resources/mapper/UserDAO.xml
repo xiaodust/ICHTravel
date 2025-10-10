@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper  namespace="com.dust.demo.dao.UserDAO">
+    <resultMap id="BaseResultMap" type="com.dust.demo.dataobject.UserDO">
+        <id   column="id" jdbcType="VARCHAR" property="id"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="password" jdbcType="VARCHAR" property="password"/>
+        <result column="nick_name" jdbcType="VARCHAR" property="nickName"/>
+        <result column="gmt_created" jdbcType="TIMESTAMP" property="gmtCreated"/>
+        <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified"/>
+    </resultMap>
+    <insert id="save">
+        INSERT INTO user (id,name,password,nick_name,gmt_created,gmt_modified) VALUES
+        (#{id},#{name},#{password},#{nickName},#{gmtCreated},#{gmtModified})
+    </insert>
+    <update id="update">
+        UPDATE user
+        <set>
+            <if test="name != null">
+                name=#{name},
+            </if>
+            <if test="password != null">
+                password=#{password},
+            </if>
+            <if test="nickName != null">
+                nick_name=#{nickName},
+            </if>
+            gmt_modified=now()
+        </set>
+        WHERE id=#{id}
+    </update>
+    <delete id="delete">
+        DELETE FROM user WHERE id=#{id}
+    </delete>
+    <select id="findAll" resultMap="BaseResultMap" >
+        SELECT id, name, password, nick_name, gmt_created, gmt_modified
+        FROM user
+    </select>
+    <select id="findById" resultMap="BaseResultMap" >
+        SELECT id, name, password, nick_name, gmt_created, gmt_modified
+        FROM user
+        WHERE id=#{id}
+    </select>
+    <select id="findByName" resultMap="BaseResultMap">
+        SELECT id, name, password, nick_name, gmt_created, gmt_modified
+        FROM user
+        WHERE name=#{name}
+    </select>
+    
+    <select id="findByUserIds" resultMap="BaseResultMap">
+        SELECT id, name, password, nick_name, gmt_created, gmt_modified
+        FROM user
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+</mapper>
