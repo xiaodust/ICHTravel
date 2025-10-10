@@ -1,0 +1,76 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.icht.backfront.dao.OrderDAO">
+    <resultMap id="BaseResultMap" type="com.icht.backfront.dataobject.OrderDO">
+        <id column="id" jdbcType="VARCHAR" property="id"/>
+        <result column="order_number" jdbcType="VARCHAR" property="orderNumber"/>
+        <result column="user_id" jdbcType="VARCHAR" property="userId"/>
+        <result column="product_detail_id" jdbcType="VARCHAR" property="productDetailId"/>
+        <result column="total_price" jdbcType="DOUBLE" property="totalPrice"/>
+        <result column="status" jdbcType="VARCHAR" property="status"/>
+        <result column="gmt_created" jdbcType="TIMESTAMP" property="gmtCreated"/>
+        <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified"/>
+    </resultMap>
+    
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `order` (id, order_number, user_id, product_detail_id, total_price, status, gmt_created, gmt_modified) 
+        VALUES
+        (#{id}, #{orderNumber}, #{userId}, #{productDetailId}, #{totalPrice}, #{status}, #{gmtCreated}, #{gmtModified})
+    </insert>
+    
+    <update id="update">
+        UPDATE `order`
+        <set>
+            <if test="orderNumber != null">
+                order_number=#{orderNumber},
+            </if>
+            <if test="userId != null">
+                user_id=#{userId},
+            </if>
+            <if test="productDetailId != null">
+                product_detail_id=#{productDetailId},
+            </if>
+            <if test="totalPrice != null">
+                total_price=#{totalPrice},
+            </if>
+            <if test="status != null">
+                status=#{status},
+            </if>
+            gmt_modified=now()
+        </set>
+        WHERE id=#{id}
+    </update>
+    
+    <select id="selectByOrderNumber" resultMap="BaseResultMap">
+        SELECT id, order_number, user_id, product_detail_id, total_price, status, gmt_created, gmt_modified
+        FROM `order`
+        WHERE order_number=#{orderNumber}
+    </select>
+    
+    <select id="selectCounts" resultType="int"  parameterType="com.icht.backfront.param.QueryOrderParam">
+        SELECT COUNT(*)
+        FROM `order`
+        <where>
+            <if test="productDetailId != null and productDetailId != ''">
+                AND product_detail_id=#{productDetailId}
+            </if>
+            <if test="time != null">
+                AND gmt_created >= #{time}
+            </if>
+        </where>
+    </select>
+    
+    <select id="pageQuery" resultMap="BaseResultMap">
+        SELECT id, order_number, user_id, product_detail_id, total_price, status, gmt_created, gmt_modified
+        FROM `order`
+        <where>
+            <if test="productDetailId != null and productDetailId != ''">
+                AND product_detail_id=#{productDetailId}
+            </if>
+            <if test="time != null">
+                AND gmt_created >= #{time}
+            </if>
+        </where>
+        <bind name="currentIndex" value="pagination * pageSize"/>
+        LIMIT #{currentIndex}, #{pageSize}
+    </select>
+</mapper>

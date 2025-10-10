@@ -5,20 +5,27 @@ import com.icht.backfront.dataobject.UserDO;
 import com.icht.backfront.model.Result;
 import com.icht.backfront.model.User;
 import com.icht.backfront.service.UserService;
-import org.apache.commons.lang3.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class UserServiceImpl implements UserService {
     @Autowired
     private UserDAO userDAO;
+    @Autowired
+    private RedisTemplate redisTemplate;
+
+
+    @SuppressWarnings("UnreachableCode")
     @Override
     public Result<User> register(String name, String password) {
         Result<User> result=new Result<>();
@@ -32,9 +39,11 @@ public class UserServiceImpl implements UserService {
             result.setMessage("密码不能为空");
             return result;
         }
-        UserDO userDO=new UserDO();
-        userDO=userDAO.findByName(name);
 
+        UserDO userDO=(UserDO) redisTemplate.opsForValue().get(name);
+        if (userDO==null){
+           userDO=userDAO.findByName(name);
+        }
         if (userDO!=null){
             result.setCode("602");
             result.setMessage("用户名已经存在");
@@ -46,12 +55,14 @@ public class UserServiceImpl implements UserService {
         userDO1.setPassword(password);
         userDAO.save(userDO1);
 
+        redisTemplate.opsForValue().set(name,userDO1,30,TimeUnit.MINUTES);
         result.setSuccess(true);
         result.setCode("200");
         result.setData(userDO1.ToMode());
         return result;
     }
 
+    @SuppressWarnings("UnreachableCode")
     @Override
     public Result<User> login(String name, String password) {
         Result<User> result=new Result<>();
@@ -67,8 +78,24 @@ public class UserServiceImpl implements UserService {
             return result;
         }
 
-        UserDO userDO=userDAO.findByName(name);
-
+       UserDO userDO=(UserDO)redisTemplate.opsForValue().get(name);
+        if (userDO==null){
+            // 检查是否存在空值标记，防止缓存穿透
+            String emptyFlag = (String)redisTemplate.opsForValue().get("EMPTY_USER_" + name);
+            if (emptyFlag != null) {
+                // 存在空值标记，直接返回用户不存在
+                userDO = null;
+            } else {
+                userDO = userDAO.findByName(name);
+                if (userDO != null) {
+                    // 缓存有效用户数据
+                    redisTemplate.opsForValue().set(name, userDO, 30, TimeUnit.MINUTES);
+                } else {
+                    // 缓存空值标记，防止缓存穿透，设置较短过期时间
+                    redisTemplate.opsForValue().set("EMPTY_USER_" + name, "NOT_FOUND", 5, TimeUnit.MINUTES);
+                }
+            }
+        }
         if (userDO==null){
             result.setCode("602");
             result.setMessage("用户名不存在");
@@ -98,4 +125,6 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+
 }
+
