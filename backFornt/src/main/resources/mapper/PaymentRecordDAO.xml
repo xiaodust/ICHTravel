@@ -1,0 +1,77 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.icht.backfront.dao.PaymentRecordDAO">
+    <resultMap id="BaseResultMap" type="com.icht.backfront.dataobject.PaymentRecordDO">
+        <id column="id" jdbcType="VARCHAR" property="id"/>
+        <result column="user_id" jdbcType="VARCHAR" property="userId"/>
+        <result column="order_number" jdbcType="VARCHAR" property="orderNumber"/>
+        <result column="channel_payment_id" jdbcType="VARCHAR" property="channelPaymentId"/>
+        <result column="channel_type" jdbcType="VARCHAR" property="channelType"/>
+        <result column="payment_status" jdbcType="VARCHAR" property="paymentStatus"/>
+        <result column="amount" jdbcType="DECIMAL" property="amount"/>
+        <result column="pay_type" jdbcType="VARCHAR" property="payType"/>
+        <result column="extend_str" jdbcType="VARCHAR" property="extendStr"/>
+        <result column="pay_end_time" jdbcType="VARCHAR" property="payEndTime"/>
+        <result column="gmt_created" jdbcType="TIMESTAMP" property="gmtCreated"/>
+        <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO payment_record (id, user_id, order_number, channel_payment_id, channel_type, payment_status, amount, pay_type, extend_str, pay_end_time, gmt_created, gmt_modified)
+        VALUES
+        (#{id}, #{userId}, #{orderNumber}, #{channelPaymentId}, #{channelType}, #{paymentStatus}, #{amount}, #{payType}, #{extendStr}, #{payEndTime}, #{gmtCreated}, #{gmtModified})
+    </insert>
+
+    <update id="update">
+        UPDATE payment_record
+        <set>
+            <if test="userId != null">
+                user_id=#{userId},
+            </if>
+            <if test="orderNumber != null">
+                order_number=#{orderNumber},
+            </if>
+            <if test="channelPaymentId != null">
+                channel_payment_id=#{channelPaymentId},
+            </if>
+            <if test="channelType != null">
+                channel_type=#{channelType},
+            </if>
+            <if test="paymentStatus != null">
+                payment_status=#{paymentStatus},
+            </if>
+            <if test="amount != null">
+                amount=#{amount},
+            </if>
+            <if test="payType != null">
+                pay_type=#{payType},
+            </if>
+            <if test="extendStr != null">
+                extend_str=#{extendStr},
+            </if>
+            <if test="payEndTime != null">
+                pay_end_time=#{payEndTime},
+            </if>
+            gmt_modified=now()
+        </set>
+        WHERE id=#{id}
+    </update>
+
+    <select id="select" resultMap="BaseResultMap">
+        SELECT id, user_id, order_number, channel_payment_id, channel_type, payment_status, amount, pay_type, extend_str, pay_end_time, gmt_created, gmt_modified
+        FROM payment_record
+        <where>
+            <if test="userId != null and userId != ''">
+                AND user_id=#{userId}
+            </if>
+            <if test="orderNumber != null and orderNumber != ''">
+                AND order_number=#{orderNumber}
+            </if>
+            <if test="paymentStatus != null">
+                AND payment_status=#{paymentStatus}
+            </if>
+            <if test="payType != null">
+                AND pay_type=#{payType}
+            </if>
+        </where>
+    </select>
+</mapper>
