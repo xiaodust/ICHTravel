@@ -1,6 +1,6 @@
 package com.icht.backfront.param;
 
-import com.dust.demo.model.PaymentStatus;
+import com.icht.backfront.model.PaymentStatus;
 
 public class PaymentRecordQueryParam {
     private String userId;

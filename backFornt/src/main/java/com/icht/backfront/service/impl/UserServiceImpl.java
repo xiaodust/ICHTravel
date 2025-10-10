@@ -10,10 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -80,18 +77,14 @@ public class UserServiceImpl implements UserService {
 
        UserDO userDO=(UserDO)redisTemplate.opsForValue().get(name);
         if (userDO==null){
-            // 检查是否存在空值标记，防止缓存穿透
             String emptyFlag = (String)redisTemplate.opsForValue().get("EMPTY_USER_" + name);
             if (emptyFlag != null) {
-                // 存在空值标记，直接返回用户不存在
                 userDO = null;
             } else {
                 userDO = userDAO.findByName(name);
                 if (userDO != null) {
-                    // 缓存有效用户数据
                     redisTemplate.opsForValue().set(name, userDO, 30, TimeUnit.MINUTES);
                 } else {
-                    // 缓存空值标记，防止缓存穿透，设置较短过期时间
                     redisTemplate.opsForValue().set("EMPTY_USER_" + name, "NOT_FOUND", 5, TimeUnit.MINUTES);
                 }
             }

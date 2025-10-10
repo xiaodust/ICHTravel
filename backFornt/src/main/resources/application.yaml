@@ -54,7 +54,7 @@ spring:
               deafult:
                 type: com.icht.backfront.model.Notify
             trusted:
-              packages: *
+              packages: "*"
 mybatis:
   mapper-locations: classpath:mapper/*.xml
   configuration:
@@ -68,5 +68,5 @@ logging:
             client:
               advisor: debug
     com:
-      dust:
-        roleplay: debug
+      icht:
+        backfront: debug

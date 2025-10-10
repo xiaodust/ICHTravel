@@ -4,12 +4,14 @@ import com.icht.backfront.model.Result;
 import com.icht.backfront.model.User;
 import com.icht.backfront.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 @RequestMapping("/api/user")
 @Controller
 public class UserApi {
+    @Autowired
     private UserService userService;
 
     @PostMapping("/reg")
