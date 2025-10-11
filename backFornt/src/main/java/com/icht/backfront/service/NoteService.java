@@ -14,4 +14,6 @@ public interface NoteService {
     public Paging<Note> pageQueryNote(BasePageParam basePageParam);
 
     public List<Note> getByUserId(String userId);
+
+    public  Note getById(String id);
 }

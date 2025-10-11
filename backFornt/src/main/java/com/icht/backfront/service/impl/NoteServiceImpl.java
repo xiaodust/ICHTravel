@@ -91,4 +91,17 @@ public class NoteServiceImpl implements NoteService {
         return noteList;
     }
 
+    @Override
+    public Note getById(String id) {
+        if (StringUtils.isBlank(id)){
+            return null;
+        }
+        NoteDO noteDO = noteDAO.selectById(id);
+        if (noteDO == null){
+            return null;
+        }
+        Note note = noteDO.ToModel();
+        return note;
+    }
+
 }
