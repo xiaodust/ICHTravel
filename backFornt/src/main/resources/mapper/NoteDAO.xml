@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.icht.backfront.dao.NoteDAO">
+    <resultMap id="BaseResultMap" type="com.icht.backfront.dataobject.NoteDO">
+        <id column="id" jdbcType="VARCHAR" property="id"/>
+        <result column="user_id" jdbcType="VARCHAR" property="userId"/>
+        <result column="user_name" jdbcType="VARCHAR" property="userName"/>
+        <result column="context" jdbcType="LONGVARCHAR" property="context"/>
+        <result column="image" jdbcType="VARCHAR" property="image"/>
+        <result column="comment_count" jdbcType="INTEGER" property="commentCount"/>
+        <result column="liked" jdbcType="INTEGER" property="liked"/>
+        <result column="gmt_created" jdbcType="TIMESTAMP" property="gmtCreated"/>
+        <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified"/>
+    </resultMap>
+    
+    <insert id="insert" parameterType="com.icht.backfront.dataobject.NoteDO">
+        INSERT INTO note (
+            id,
+            user_id,
+            user_name,
+            context,
+            image,
+            comment_count,
+            liked,
+            gmt_created,
+            gmt_modified
+        ) VALUES (
+            #{id},
+            #{userId},
+            #{userName},
+            #{context},
+            #{image},
+            #{commentCount},
+            #{liked},
+            #{gmtCreated},
+            #{gmtModified}
+        )
+    </insert>
+    
+    <delete id="delete">
+        DELETE FROM note WHERE id = #{id}
+    </delete>
+    
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT * FROM note ORDER BY gmt_created DESC
+    </select>
+    
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT * FROM note WHERE user_id = #{userId} ORDER BY gmt_created DESC
+    </select>
+
+    <select id="pageQuery" resultMap="BaseResultMap">
+        SELECT id,
+        user_id,
+        user_name,
+        context,
+        image,
+        comment_count,
+        liked,
+        gmt_created,
+        gmt_modified
+        FROM note
+        <bind name="currentIndex" value="pagination * pageSize"/>
+        limit #{currentIndex},#{pageSize}
+    </select>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT id,
+        user_id,
+        user_name,
+        context,
+        image,
+        comment_count,
+        liked,
+        gmt_created,
+        gmt_modified
+        FROM note
+        WHERE id=#{id}
+    </select>
+
+    <select id="selectAllCounts" resultType="int">
+        SELECT COUNT(*) FROM note
+    </select>
+</mapper>
