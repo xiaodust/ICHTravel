@@ -12,6 +12,8 @@ public interface NoteDAO {
 
     int delete(String id);
 
+    NoteDO update(NoteDO noteDO);
+
     NoteDO selectById(String id);
 
     List<NoteDO> selectAll();

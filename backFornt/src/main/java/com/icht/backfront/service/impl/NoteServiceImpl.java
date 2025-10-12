@@ -104,4 +104,30 @@ public class NoteServiceImpl implements NoteService {
         return note;
     }
 
+    @Override
+    public Note likeNote(String id) {
+       if (StringUtils.isBlank(id)){
+            return null;
+       }
+       NoteDO noteDO = noteDAO.selectById(id);
+       if (noteDO == null){
+           return null;
+       }
+       noteDO.setLiked(noteDO.getLiked() + 1);
+      return noteDAO.update(noteDO).ToModel();
+    }
+
+    @Override
+    public Note unlikeNote(String id) {
+        if (StringUtils.isBlank(id)){
+            return null;
+        }
+        NoteDO noteDO = noteDAO.selectById(id);
+        if (noteDO == null){
+            return null;
+        }
+        noteDO.setLiked(noteDO.getLiked() - 1);
+        return noteDAO.update(noteDO).ToModel();
+    }
+
 }
