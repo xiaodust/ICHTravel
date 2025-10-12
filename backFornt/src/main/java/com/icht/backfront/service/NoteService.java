@@ -16,4 +16,8 @@ public interface NoteService {
     public List<Note> getByUserId(String userId);
 
     public  Note getById(String id);
+
+    public Note likeNote(String id);
+
+    public Note unlikeNote(String id);
 }

@@ -10,4 +10,8 @@ public interface CommentService {
     public int delete(String id);
 
     public List<Comment> findByNoteId(String noteId);
+
+    public Comment likeComment(String id);
+
+    public Comment unlikeComment(String id);
 }

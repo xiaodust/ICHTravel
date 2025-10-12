@@ -53,4 +53,30 @@ public class CommentServiceImpl implements CommentService {
         }
         return comments;
     }
+
+    @Override
+    public Comment likeComment(String id) {
+       if(StringUtils.isBlank(id)){
+           return null;
+       }
+       CommentDO commentDO = commentDAO.selectById(id);
+       if(commentDO == null){
+           return null;
+       }
+       commentDO.setLiked(commentDO.getLiked() + 1);
+        return commentDAO.update(commentDO).ToModel();
+    }
+
+    @Override
+    public Comment unlikeComment(String id) {
+        if(StringUtils.isBlank(id)){
+            return null;
+        }
+        CommentDO commentDO = commentDAO.selectById(id);
+        if(commentDO == null){
+            return null;
+        }
+        commentDO.setLiked(commentDO.getLiked() - 1);
+        return commentDAO.update(commentDO).ToModel();
+    }
 }

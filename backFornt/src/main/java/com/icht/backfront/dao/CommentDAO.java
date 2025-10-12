@@ -15,4 +15,6 @@ public interface CommentDAO {
 
     List<CommentDO> selectByNoteId(int noteId);
 
+    CommentDO update(CommentDO commentDO);
+
 }

@@ -7,10 +7,7 @@ import com.icht.backfront.param.BasePageParam;
 import com.icht.backfront.service.NoteService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -44,6 +41,24 @@ public class NoteApi {
         Result<List<Note>> result = new Result<>();
         result.setSuccess(true);
         result.setData(noteService.getByUserId(userId));
+        return result;
+    }
+
+    @PostMapping("/like")
+    @ResponseBody
+    public Result<Note> like(@RequestParam String id) {
+        Result<Note> result = new Result<>();
+        result.setSuccess(true);
+        result.setData(noteService.likeNote(id));
+        return result;
+    }
+
+    @PostMapping("/unlike")
+    @ResponseBody
+    public Result<Note> unlike(@RequestParam String id) {
+        Result<Note> result = new Result<>();
+        result.setSuccess(true);
+        result.setData(noteService.unlikeNote(id));
         return result;
     }
 
