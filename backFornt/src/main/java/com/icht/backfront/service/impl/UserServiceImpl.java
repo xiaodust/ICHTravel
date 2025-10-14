@@ -24,7 +24,7 @@ public class UserServiceImpl implements UserService {
 
     @SuppressWarnings("UnreachableCode")
     @Override
-    public Result<User> register(String name, String password) {
+    public Result<User> register(String name, String password,String number) {
         Result<User> result=new Result<>();
         if (StringUtils.isEmpty(name)){
             result.setCode("600");
@@ -50,6 +50,7 @@ public class UserServiceImpl implements UserService {
         userDO1.setId(UUID.randomUUID().toString());
         userDO1.setName(name);
         userDO1.setPassword(password);
+        userDO1.setNumber(number);
         userDAO.save(userDO1);
 
         redisTemplate.opsForValue().set(name,userDO1,30,TimeUnit.MINUTES);

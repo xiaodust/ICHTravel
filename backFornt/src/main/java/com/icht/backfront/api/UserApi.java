@@ -17,7 +17,7 @@ public class UserApi {
     @PostMapping("/reg")
     @ResponseBody
     public Result<User> register(@RequestParam String name, @RequestParam String password) {
-        return userService.register(name, password);
+        return userService.register(name, password,password);
     }
 
     @GetMapping("/login")
