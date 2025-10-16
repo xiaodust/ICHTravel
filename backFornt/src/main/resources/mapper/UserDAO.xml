@@ -14,7 +14,7 @@
     </resultMap>
     <insert id="save">
         INSERT INTO user (id,name,password,nick_name,number,signature,avatar,gmt_created,gmt_modified) VALUES
-        (#{id},#{name},#{password},#{nickName},#{number},#{Signature},#{avatar},#{gmtCreated},#{gmtModified})
+        (#{id},#{name},#{password},#{nickName},#{number},#{Signature},#{avatar},#{gmtCreated,jdbcType=TIMESTAMP},#{gmtModified,jdbcType=TIMESTAMP})
     </insert>
     <update id="update">
         UPDATE user

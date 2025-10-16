@@ -1,9 +1,12 @@
 package com.icht.backfront.service.impl;
 
+import com.icht.backfront.dao.ShoppingCartDAO;
 import com.icht.backfront.dao.UserDAO;
+import com.icht.backfront.dataobject.ShoppingCartDO;
 import com.icht.backfront.dataobject.UserDO;
 import com.icht.backfront.model.Result;
 import com.icht.backfront.model.User;
+import com.icht.backfront.service.ShoppingCartService;
 import com.icht.backfront.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
@@ -20,6 +23,8 @@ public class UserServiceImpl implements UserService {
     private UserDAO userDAO;
     @Autowired
     private RedisTemplate redisTemplate;
+    @Autowired
+    private ShoppingCartService shoppingCartService;
 
 
     @SuppressWarnings("UnreachableCode")
@@ -52,6 +57,7 @@ public class UserServiceImpl implements UserService {
         userDO1.setPassword(password);
         userDO1.setNumber(number);
         userDAO.save(userDO1);
+        shoppingCartService.insertShoppingCart(userDO1.getId());
 
         redisTemplate.opsForValue().set(name,userDO1,30,TimeUnit.MINUTES);
         result.setSuccess(true);

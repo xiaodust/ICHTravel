@@ -1,10 +1,13 @@
 package com.icht.backfront.dataobject;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.icht.backfront.model.ShoppingCart;
 import org.springframework.beans.BeanUtils;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ShoppingCartDO {
@@ -16,6 +19,7 @@ public class ShoppingCartDO {
     private LocalDateTime gmtCreated;
     @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime gmtModified;
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     public int getTotalPrice() {
         return totalPrice;
@@ -47,6 +51,29 @@ public class ShoppingCartDO {
 
     public void setItemId(List<String> itemId) {
         this.itemId = itemId;
+    }
+
+    public String getItemIdJson() {
+        if (itemId == null) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(itemId);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to convert itemId list to JSON", e);
+        }
+    }
+
+    public void setItemIdJson(String itemIdJson) {
+        if (itemIdJson == null || itemIdJson.isEmpty()) {
+            this.itemId = new ArrayList<>();
+            return;
+        }
+        try {
+            this.itemId = objectMapper.readValue(itemIdJson, objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to parse itemId JSON", e);
+        }
     }
 
     public LocalDateTime getGmtCreated() {

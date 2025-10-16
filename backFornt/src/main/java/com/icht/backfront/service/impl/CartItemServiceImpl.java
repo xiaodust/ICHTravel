@@ -4,19 +4,20 @@ import com.icht.backfront.dao.CartItemDAO;
 import com.icht.backfront.dataobject.CartItemDO;
 import com.icht.backfront.model.CartItem;
 import com.icht.backfront.service.CartItemService;
+import com.icht.backfront.service.ShoppingCartService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.UUID;
 @Service
 public class CartItemServiceImpl implements CartItemService {
     @Autowired
     private CartItemDAO cartItemDAO;
     @Override
-    public int addItem(CartItem cartItem,String cartId) {
-        if (cartId==null){
+    public int addItem(CartItem cartItem) {
+        if (cartItem.getCartId()==null){
             return 0;
         }
         if (cartItem==null){
@@ -25,22 +26,25 @@ public class CartItemServiceImpl implements CartItemService {
         if (cartItem.getProductId()==null){
             return 0;
         }
-
-        CartItemDO cartItemDO=cartItemDAO.findByProductId(cartItem.getProductId(),cartId);
-        if (cartItemDO==null){
-            cartItemDO.setNumber(cartItem.getNumber()+cartItemDO.getNumber());
-           return cartItemDAO.update(cartItemDO);
+        if (cartItem.getId()==null){
+            cartItem.setId(UUID.randomUUID().toString());
         }
-        cartItemDO=new CartItemDO(cartItem);
-        return cartItemDAO.insert(cartItemDO);
+
+        CartItemDO cartItemDO=cartItemDAO.findByProductId(cartItem.getProductId(),cartItem.getCartId());
+        if (cartItemDO!=null){
+            cartItemDO.setNumber(cartItem.getNumber()+cartItemDO.getNumber());
+            cartItemDO.setTotalPrice(cartItem.getTotalPrice()+cartItemDO.getTotalPrice());
+            return cartItemDAO.insert(cartItemDO);
+        }
+        return cartItemDAO.insert(new CartItemDO(cartItem));
     }
 
     @Override
-    public int deleteItem(String itemId) {
-        if (itemId==null){
+    public int deleteItem(String id) {
+        if (id==null){
             return 0;
         }
-        CartItemDO cartItemDO=cartItemDAO.findById(itemId);
+        CartItemDO cartItemDO=cartItemDAO.findById(id);
         if (cartItemDO==null){
             return 0;
         }
