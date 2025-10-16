@@ -2,9 +2,8 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.icht.backfront.dao.ShoppingCartDAO">
     <resultMap id="BaseResultMap" type="com.icht.backfront.dataobject.ShoppingCartDO">
-        <id column="id" jdbcType="VARCHAR" property="id"/>
-        <result column="user_id" jdbcType="VARCHAR" property="userId"/>
-        <result column="item_id" jdbcType="VARCHAR" property="itemIdJson"/>
+        <id column="user_id" jdbcType="VARCHAR" property="userId"/>
+        <result column="item_id" jdbcType="VARCHAR" property="itemIdJson" javaType="java.lang.String"/>
         <result column="number" jdbcType="INTEGER" property="number"/>
         <result column="total_price" jdbcType="INTEGER" property="totalPrice"/>
         <result column="gmt_created" jdbcType="TIMESTAMP" property="gmtCreated"/>
@@ -12,7 +11,7 @@
     </resultMap>
     
     <select id="getByUserId" resultMap="BaseResultMap">
-        SELECT id, user_id, item_id, number, total_price, gmt_created, gmt_modified
+        SELECT user_id, item_id, number, total_price, gmt_created, gmt_modified
         FROM shopping_cart
         WHERE user_id=#{userId}
     </select>
@@ -34,9 +33,9 @@
         WHERE user_id=#{userId}
     </update>
     
-    <insert id="insertShoppingCart" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO shopping_cart (id, user_id, item_id, number, total_price, gmt_created, gmt_modified) 
+    <insert id="insertShoppingCart">
+        INSERT INTO shopping_cart (user_id, item_id, number, total_price, gmt_created, gmt_modified) 
         VALUES
-        (#{id}, #{userId}, #{itemIdJson}, #{number}, #{totalPrice}, #{gmtCreated,jdbcType=TIMESTAMP}, #{gmtModified,jdbcType=TIMESTAMP})
+        (#{userId}, #{itemIdJson}, #{number}, #{totalPrice}, #{gmtCreated,jdbcType=TIMESTAMP}, #{gmtModified,jdbcType=TIMESTAMP})
     </insert>
 </mapper>

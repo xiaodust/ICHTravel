@@ -55,7 +55,7 @@ public class ShoppingCartDO {
 
     public String getItemIdJson() {
         if (itemId == null) {
-            return null;
+            return "[]";
         }
         try {
             return objectMapper.writeValueAsString(itemId);
@@ -65,7 +65,7 @@ public class ShoppingCartDO {
     }
 
     public void setItemIdJson(String itemIdJson) {
-        if (itemIdJson == null || itemIdJson.isEmpty()) {
+        if (itemIdJson == null || itemIdJson.isEmpty() || "[]".equals(itemIdJson)) {
             this.itemId = new ArrayList<>();
             return;
         }

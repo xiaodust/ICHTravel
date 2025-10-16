@@ -1,6 +1,6 @@
 spring:
   application:
-    name: roleplay
+    name: icht
   ai:
     alibaba:
       tool calling:

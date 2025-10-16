@@ -31,7 +31,7 @@ public class ShoppingCartImpl implements ShoppingCartService {
 
     @Override
     public ShoppingCart getByUserId(String userId) {
-        if(StringUtils.isNotBlank(userId)){
+        if(StringUtils.isBlank(userId)){
             return null;
         }
         ShoppingCartDO shoppingCartDO = shoppingCartDAO.getByUserId(userId);

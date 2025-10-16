@@ -17,10 +17,10 @@ public class CartItemServiceImpl implements CartItemService {
     private CartItemDAO cartItemDAO;
     @Override
     public int addItem(CartItem cartItem) {
-        if (cartItem.getCartId()==null){
+        if (cartItem==null){
             return 0;
         }
-        if (cartItem==null){
+        if (cartItem.getCartId()==null){
             return 0;
         }
         if (cartItem.getProductId()==null){
@@ -34,7 +34,7 @@ public class CartItemServiceImpl implements CartItemService {
         if (cartItemDO!=null){
             cartItemDO.setNumber(cartItem.getNumber()+cartItemDO.getNumber());
             cartItemDO.setTotalPrice(cartItem.getTotalPrice()+cartItemDO.getTotalPrice());
-            return cartItemDAO.insert(cartItemDO);
+            return cartItemDAO.update(cartItemDO);
         }
         return cartItemDAO.insert(new CartItemDO(cartItem));
     }
