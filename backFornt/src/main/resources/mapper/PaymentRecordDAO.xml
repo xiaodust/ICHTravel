@@ -18,7 +18,7 @@
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO payment_record (id, user_id, order_number, channel_payment_id, channel_type, payment_status, amount, pay_type, extend_str, pay_end_time, gmt_created, gmt_modified)
         VALUES
-        (#{id}, #{userId}, #{orderNumber}, #{channelPaymentId}, #{channelType}, #{paymentStatus}, #{amount}, #{payType}, #{extendStr}, #{payEndTime}, #{gmtCreated}, #{gmtModified})
+        (#{id}, #{userId}, #{orderNumber}, #{channelPaymentId}, #{channelType}, #{paymentStatus}, #{amount}, #{payType}, #{extendStr}, #{payEndTime}, #{gmtCreated,jdbcType=TIMESTAMP}, #{gmtModified,jdbcType=TIMESTAMP})
     </insert>
 
     <update id="update">

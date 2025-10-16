@@ -12,7 +12,7 @@
     
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO product_detail (id, product_id, price, size, stock, gmt_created, gmt_modified) VALUES
-        (#{id}, #{productId}, #{price}, #{size}, #{stock}, #{gmtCreated}, #{gmtModified})
+        (#{id}, #{productId}, #{price}, #{size}, #{stock}, #{gmtCreated,jdbcType=TIMESTAMP}, #{gmtModified,jdbcType=TIMESTAMP})
     </insert>
     
     <update id="updateById">

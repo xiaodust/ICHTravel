@@ -32,8 +32,8 @@
             #{image},
             #{commentCount},
             #{liked},
-            #{gmtCreated},
-            #{gmtModified}
+            #{gmtCreated,jdbcType=TIMESTAMP},
+            #{gmtModified,jdbcType=TIMESTAMP}
         )
     </insert>
     
@@ -41,8 +41,8 @@
         DELETE FROM note WHERE id = #{id}
     </delete>
 
-    <update id="update" parameterType="com.icht.backfront.dataobject.CommentDO">
-        <selectKey resultType="com.icht.backfront.dataobject.CommentDO" keyProperty="result" order="AFTER">
+    <update id="update" parameterType="com.icht.backfront.dataobject.NoteDO">
+        <selectKey resultType="com.icht.backfront.dataobject.NoteDO" keyProperty="result" order="AFTER">
             SELECT id,
             user_id,
             user_name,
@@ -52,31 +52,31 @@
             liked,
             gmt_created,
             gmt_modified
-            FROM comment
+            FROM note
             WHERE id=#{id}
         </selectKey>
-        UPDATE comment
+        UPDATE note
         <set>
             <if test="userId != null">
-                note_id=#{noteId},
-            </if>
-            <if test="userName != null">
-                parent_id=#{parentId},
-            </if>
-            <if test="context != null">
                 user_id=#{userId},
             </if>
-            <if test="image != null">
+            <if test="userName != null">
                 user_name=#{userName},
             </if>
+            <if test="context != null">
+                context=#{context,jdbcType=LONGVARCHAR},
+            </if>
+            <if test="image != null">
+                image=#{image},
+            </if>
             <if test="commentCount != null">
-                content=#{content},
+                comment_count=#{commentCount},
             </if>
             <if test="liked != null">
                 liked=#{liked},
             </if>
             <if test="gmtModified != null">
-                gmt_modified=#{gmtModified}
+                gmt_modified=#{gmtModified,jdbcType=TIMESTAMP}
             </if>
             <if test="gmtModified == null">
                 gmt_modified=now()

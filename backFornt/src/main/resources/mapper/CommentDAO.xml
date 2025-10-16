@@ -32,8 +32,8 @@
             #{userName},
             #{content},
             #{liked},
-            #{gmtCreated},
-            #{gmtModified}
+            #{gmtCreated,jdbcType=TIMESTAMP},
+            #{gmtModified,jdbcType=TIMESTAMP}
         )
     </insert>
     

@@ -10,6 +10,9 @@ public class UserDO {
     private String nickName;
     private String name;
     private String password;
+    private String number;
+    private String Signature;
+    private String avatar;
     @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime gmtCreated;
     @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd HH:mm:ss")
@@ -23,6 +26,9 @@ public class UserDO {
         user.setGmtModified(gmtModified);
         user.setId(id);
         user.setName(name);
+        user.setNumber(number);
+        user.setSignature(Signature);
+        user.setAvatar(avatar);
         return user;
     }
 
@@ -72,5 +78,29 @@ public class UserDO {
 
     public void setGmtModified(LocalDateTime gmtModified) {
         this.gmtModified = gmtModified;
+    }
+
+    public String getNumber() {
+        return number;
+    }
+
+    public void setNumber(String number) {
+        this.number = number;
+    }
+
+    public String getSignature() {
+        return Signature;
+    }
+
+    public void setSignature(String signature) {
+        Signature = signature;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
     }
 }
