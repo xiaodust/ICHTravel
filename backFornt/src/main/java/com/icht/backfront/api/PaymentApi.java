@@ -35,12 +35,14 @@ public class PaymentApi {
         if (StringUtils.isEmpty(paymentParam.getUserId())){
             result.setSuccess(false);
             result.setMessage("useId is null");
+            result.setCode("601");
             return result;
         }
 
         if (paymentParam.getTotalAmount()<0){
             result.setSuccess(false);
             result.setMessage("支付金额不能小于0");
+            result.setCode("602");
             return result;
         }
         PaymentRecord paymentRecord = initPaymentRecord(paymentParam);

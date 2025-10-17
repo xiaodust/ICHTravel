@@ -21,6 +21,8 @@ public class CommentApi {
         Result<List<Comment>> result = new Result<>();
         result.setSuccess(true);
         result.setData(commentService.findByNoteId(noteId));
+        result.setMessage("获取成功");
+        result.setCode("200");
         return result;
     }
 
@@ -30,6 +32,8 @@ public class CommentApi {
         Result result = new Result<>();
         result.setSuccess(true);
         result.setData(commentService.save(comment));
+        result.setMessage("添加成功");
+        result.setCode("200");
         return result;
     }
 
@@ -39,6 +43,8 @@ public class CommentApi {
         Result result = new Result<>();
         result.setSuccess(true);
         result.setData(commentService.likeComment(id));
+        result.setCode("200");
+        result.setMessage("点赞成功");
         return result;
 
     }
@@ -49,6 +55,8 @@ public class CommentApi {
         Result result = new Result<>();
         result.setSuccess(true);
         result.setData(commentService.unlikeComment(id));
+        result.setCode("200");
+        result.setMessage("取消点赞成功");
         return result;
     }
 }

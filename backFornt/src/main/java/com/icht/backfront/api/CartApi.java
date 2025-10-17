@@ -35,6 +35,7 @@ public class CartApi {
         ShoppingCart shoppingCart=shoppingCartService.getByUserId(cartItem.getCartId());
         if (shoppingCart==null){
             result.setSuccess(false);
+            result.setCode("601");
             result.setMessage("购物车不存在");
             return result;
         }
@@ -48,6 +49,8 @@ public class CartApi {
         }
         shoppingCartDAO.updateShoppingCart(new ShoppingCartDO(shoppingCart));
         result.setData(cartItem);
+        result.setCode("200");
+        result.setMessage("添加成功");
         return result;
     }
 
@@ -57,6 +60,8 @@ public class CartApi {
         Result result = new Result();
         result.setSuccess(true);
         result.setData(shoppingCartService.getByUserId(cartId));
+        result.setCode("200");
+        result.setMessage("获取成功");
        return result;
     }
 
@@ -66,6 +71,8 @@ public class CartApi {
         Result result = new Result();
         result.setSuccess(true);
         result.setData(cartItemService.getCartItems(cartId));
+        result.setCode("200");
+        result.setMessage("获取成功");
         return result;
     }
 
@@ -82,6 +89,8 @@ public class CartApi {
         itemId.remove(cartItemId);
         shoppingCart.setItemId(itemId);
         result.setData(shoppingCart);
+        result.setCode("200");
+        result.setMessage("删除成功");
         return result;
     }
 

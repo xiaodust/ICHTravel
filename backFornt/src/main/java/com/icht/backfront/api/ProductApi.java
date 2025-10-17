@@ -23,6 +23,8 @@ public class ProductApi {
 
         result.setSuccess(true);
         result.setData(productService.pageQueryProduct(basePageParam));
+        result.setMessage("获取成功");
+        result.setCode("200");
         return result;
     }
 
@@ -35,6 +37,8 @@ public class ProductApi {
 
         result.setSuccess(true);
         result.setData(productService.getById(productId));
+        result.setCode("200");
+        result.setMessage("获取成功");
         return result;
     }
 }

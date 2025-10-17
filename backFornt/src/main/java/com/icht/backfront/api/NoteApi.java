@@ -41,6 +41,8 @@ public class NoteApi {
         Result<List<Note>> result = new Result<>();
         result.setSuccess(true);
         result.setData(noteService.getByUserId(userId));
+        result.setMessage("获取成功");
+        result.setSuccess(true);
         return result;
     }
 
@@ -50,6 +52,8 @@ public class NoteApi {
         Result<Note> result = new Result<>();
         result.setSuccess(true);
         result.setData(noteService.likeNote(id));
+        result.setMessage("点赞成功");
+        result.setCode("200");
         return result;
     }
 
@@ -59,6 +63,8 @@ public class NoteApi {
         Result<Note> result = new Result<>();
         result.setSuccess(true);
         result.setData(noteService.unlikeNote(id));
+        result.setMessage("取消点赞成功");
+        result.setCode("200");
         return result;
     }
 
