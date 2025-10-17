@@ -111,7 +111,7 @@
         <h3>非遗好物商城</h3>
         <p>正宗非遗产品直邮到家</p>
       </div>
-      <div class="entry-card" @click="gotoPage('3dworkshop')">
+      <div class="entry-card" @click="gotoPage('workshop')">
         <img src="https://picsum.photos/60/60?random=7" alt="3D工坊">
         <h3>3D云游工坊</h3>
         <p>沉浸式体验非遗制作过程</p>
@@ -237,7 +237,7 @@ const gotoPage = (pageUrl) => {
   const routeMap = {
     route: '/heritage-map',
     mall: '/heritage-mall',
-    dworkshop: '/3d-workshop',
+    workshop: '/3d-workshop',
     user: '/heritage-commit'
   };
   if (routeMap[pageName]) {

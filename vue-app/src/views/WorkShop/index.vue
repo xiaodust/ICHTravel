@@ -1168,7 +1168,7 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
+<style >
 /* 全局样式 */
 * {
   margin: 0;
