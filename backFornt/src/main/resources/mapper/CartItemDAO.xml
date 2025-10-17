@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.icht.backfront.dao.CartItemDAO">
+    <resultMap id="BaseResultMap" type="com.icht.backfront.dataobject.CartItemDO">
+        <id column="id" jdbcType="VARCHAR" property="id"/>
+        <result column="cart_id" jdbcType="VARCHAR" property="cartId"/>
+        <result column="product_id" jdbcType="VARCHAR" property="productId"/>
+        <result column="number" jdbcType="INTEGER" property="number"/>
+        <result column="product_name" jdbcType="VARCHAR" property="productName"/>
+        <result column="product_price" jdbcType="INTEGER" property="productPrice"/>
+        <result column="total_price" jdbcType="INTEGER" property="totalPrice"/>
+        <result column="product_image" jdbcType="VARCHAR" property="productImage"/>
+        <result column="gmt_created" jdbcType="TIMESTAMP" property="gmtCreated"/>
+        <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified"/>
+    </resultMap>
+    
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO cart_item (id, cart_id, product_id, number, product_name, product_price, total_price, product_image, gmt_created, gmt_modified) 
+        VALUES
+        (#{id}, #{cartId}, #{productId}, #{number}, #{productName}, #{productPrice}, #{totalPrice}, #{productImage}, #{gmtCreated,jdbcType=TIMESTAMP}, #{gmtModified,jdbcType=TIMESTAMP})
+    </insert>
+    
+    <select id="findByProductId" resultMap="BaseResultMap">
+        SELECT id, cart_id, product_id, number, product_name, product_price, total_price, product_image, gmt_created, gmt_modified
+        FROM cart_item
+        WHERE product_id=#{productId} AND cart_id=#{cartId}
+    </select>
+    
+    <update id="update">
+        UPDATE cart_item
+        <set>
+            <if test="cartId != null">
+                cart_id=#{cartId},
+            </if>
+            <if test="productId != null">
+                product_id=#{productId},
+            </if>
+            <if test="number != null">
+                number=#{number},
+            </if>
+            <if test="productName != null">
+                product_name=#{productName},
+            </if>
+            <if test="productPrice != null">
+                product_price=#{productPrice},
+            </if>
+            <if test="totalPrice != null">
+                total_price=#{totalPrice},
+            </if>
+            <if test="productImage != null">
+                product_image=#{productImage},
+            </if>
+            gmt_modified=now()
+        </set>
+        WHERE id=#{id}
+    </update>
+    
+    <delete id="delete">
+        DELETE FROM cart_item WHERE id=#{id}
+    </delete>
+    
+    <select id="findByCartId" resultMap="BaseResultMap">
+        SELECT id, cart_id, product_id, number, product_name, product_price, total_price, product_image, gmt_created, gmt_modified
+        FROM cart_item
+        WHERE cart_id=#{shoppingCartId}
+    </select>
+    
+    <select id="findById" resultMap="BaseResultMap">
+        SELECT id, cart_id, product_id, number, product_name, product_price, total_price, product_image, gmt_created, gmt_modified
+        FROM cart_item
+        WHERE id=#{id}
+    </select>
+</mapper>
