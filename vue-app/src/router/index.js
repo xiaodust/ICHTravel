@@ -64,6 +64,10 @@ const router = createRouter({
     {
       path: "/heritage-commit",
       component: () => import("@/views/Commit/index.vue"),
+    },
+    {
+      path: "/heritage-map",
+      component: () => import("@/views/Map/index.vue"),
     }
   ],
   // 路由滚动行为定制
