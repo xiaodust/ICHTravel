@@ -20,4 +20,6 @@ public interface NoteService {
     public Note likeNote(String id);
 
     public Note unlikeNote(String id);
+
+    public int add(Note note);
 }
