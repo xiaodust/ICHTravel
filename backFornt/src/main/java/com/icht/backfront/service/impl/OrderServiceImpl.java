@@ -32,10 +32,6 @@ public class OrderServiceImpl implements OrderService {
     private RedissonClient redisson;
     @Autowired
     private ProductService productService;
-    @Autowired
-    private UserService userService;
-
-
 
     @Override
     public Order add(Order order) {

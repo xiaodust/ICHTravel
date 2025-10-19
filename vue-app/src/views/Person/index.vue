@@ -1703,7 +1703,7 @@ const handleOpenFeedback = () => {
 };
 </script>
 
-<style>
+<style scoped>
 /* 基础样式重置 */
 * {
   margin: 0;

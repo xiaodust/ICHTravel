@@ -4,6 +4,7 @@ import com.icht.backfront.model.Note;
 import com.icht.backfront.model.Paging;
 import com.icht.backfront.model.Result;
 import com.icht.backfront.param.BasePageParam;
+import com.icht.backfront.service.FileStorageService;
 import com.icht.backfront.service.NoteService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -16,12 +17,16 @@ import java.util.List;
 public class NoteApi {
     @Autowired
     private NoteService noteService;
+    @Autowired
+    private FileStorageService fileStorageService;
 
     @GetMapping("/page")
     @ResponseBody
     public Result<Paging<Note>> page(BasePageParam basePageParam) {
         Result<Paging<Note>> result = new Result<>();
         result.setSuccess(true);
+        result.setCode("200");
+        result.setMessage("查询成功");
         result.setData(noteService.pageQueryNote(basePageParam));
         return result;
     }
@@ -32,6 +37,8 @@ public class NoteApi {
         Result<Note> result = new Result<>();
         result.setSuccess(true);
         result.setData(noteService.getById(id));
+        result.setCode("200");
+        result.setMessage("查询成功");
         return result;
     }
 
@@ -41,8 +48,8 @@ public class NoteApi {
         Result<List<Note>> result = new Result<>();
         result.setSuccess(true);
         result.setData(noteService.getByUserId(userId));
-        result.setMessage("获取成功");
-        result.setSuccess(true);
+        result.setCode("200");
+        result.setMessage("查询成功");
         return result;
     }
 
@@ -52,8 +59,8 @@ public class NoteApi {
         Result<Note> result = new Result<>();
         result.setSuccess(true);
         result.setData(noteService.likeNote(id));
-        result.setMessage("点赞成功");
         result.setCode("200");
+        result.setCode("点赞成功");
         return result;
     }
 
@@ -63,8 +70,25 @@ public class NoteApi {
         Result<Note> result = new Result<>();
         result.setSuccess(true);
         result.setData(noteService.unlikeNote(id));
-        result.setMessage("取消点赞成功");
         result.setCode("200");
+        result.setMessage("取消点赞成功");
+        return result;
+    }
+
+    @PostMapping("/add")
+    @ResponseBody
+    public Result add(@RequestBody Note note) {
+        Result result = new Result<>();
+        result.setSuccess(true);
+        if (note==null){
+            result.setSuccess(false);
+            result.setCode("601");
+            result.setMessage("note is null");
+            return result;
+        }
+        result.setCode("200");
+        result.setData(noteService.add(note));
+        result.setMessage("添加成功");
         return result;
     }
 

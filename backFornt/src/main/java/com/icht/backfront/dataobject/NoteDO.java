@@ -3,8 +3,11 @@ package com.icht.backfront.dataobject;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.icht.backfront.model.Note;
 import org.springframework.beans.BeanUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class NoteDO {
     private String id;
@@ -15,7 +18,7 @@ public class NoteDO {
 
     private String context;
 
-    private String image;
+    private String images; // 使用字符串存储JSON格式的图片列表
 
     private int commentCount;
 
@@ -25,6 +28,8 @@ public class NoteDO {
     private LocalDateTime gmtCreated;
     @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime gmtModified;
+    
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     public String getId() {
         return id;
@@ -58,12 +63,12 @@ public class NoteDO {
         this.context = context;
     }
 
-    public String getImage() {
-        return image;
+    public String getImages() {
+        return images;
     }
 
-    public void setImage(String image) {
-        this.image = image;
+    public void setImages(String images) {
+        this.images = images;
     }
 
     public int getCommentCount() {
@@ -101,7 +106,23 @@ public class NoteDO {
     public NoteDO(){}
 
     public NoteDO(Note note){
-        BeanUtils.copyProperties(note,this);
+        this.id = note.getId();
+        this.userId = note.getUserId();
+        this.userName = note.getUserName();
+        this.context = note.getContext();
+        this.commentCount = note.getCommentCount();
+        this.liked = note.getLiked();
+        this.gmtCreated = note.getGmtCreated();
+        this.gmtModified = note.getGmtModified();
+        
+        // 将List<String>转换为JSON字符串
+        if (note.getImages() != null) {
+            try {
+                this.images = objectMapper.writeValueAsString(note.getImages());
+            } catch (Exception e) {
+                this.images = "[]";
+            }
+        }
     }
 
     public Note ToModel(){
@@ -110,11 +131,22 @@ public class NoteDO {
         note.setUserId(this.getUserId());
         note.setUserName(this.getUserName());
         note.setContext(this.getContext());
-        note.setImage(this.getImage());
         note.setCommentCount(this.getCommentCount());
         note.setLiked(this.getLiked());
         note.setGmtCreated(this.getGmtCreated());
         note.setGmtModified(this.getGmtModified());
+        
+        // 将JSON字符串转换为List<String>
+        if (this.images != null && !this.images.isEmpty()) {
+            try {
+                note.setImages(objectMapper.readValue(this.images, List.class));
+            } catch (Exception e) {
+                note.setImages(new ArrayList<>());
+            }
+        } else {
+            note.setImages(new ArrayList<>());
+        }
+        
         return note;
     }
 }
