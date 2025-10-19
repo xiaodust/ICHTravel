@@ -8,6 +8,10 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
+      path: "/",
+      component: Home,
+    },
+    {
       path: "/home",
       name: "home",
       component: Home,
@@ -52,6 +56,18 @@ const router = createRouter({
     {
       path: "/checkout",
       component: () => import("@/views/Mall/components/CheckOut.vue"),
+    },
+    {
+      path: "/3d-workshop",
+      component: () => import("@/views/WorkShop/index.vue"),
+    },
+    {
+      path: "/heritage-commit",
+      component: () => import("@/views/Commit/index.vue"),
+    },
+    {
+      path: "/heritage-map",
+      component: () => import("@/views/Map/index.vue"),
     }
   ],
   // 路由滚动行为定制

@@ -6,7 +6,7 @@
         <result column="user_id" jdbcType="VARCHAR" property="userId"/>
         <result column="user_name" jdbcType="VARCHAR" property="userName"/>
         <result column="context" jdbcType="LONGVARCHAR" property="context"/>
-        <result column="image" jdbcType="VARCHAR" property="image"/>
+        <result column="image" jdbcType="VARCHAR" property="images"/>
         <result column="comment_count" jdbcType="INTEGER" property="commentCount"/>
         <result column="liked" jdbcType="INTEGER" property="liked"/>
         <result column="gmt_created" jdbcType="TIMESTAMP" property="gmtCreated"/>
@@ -19,7 +19,7 @@
             user_id,
             user_name,
             context,
-            image,
+            images,
             comment_count,
             liked,
             gmt_created,
@@ -29,7 +29,7 @@
             #{userId},
             #{userName},
             #{context},
-            #{image},
+            #{images},
             #{commentCount},
             #{liked},
             #{gmtCreated,jdbcType=TIMESTAMP},
@@ -47,7 +47,7 @@
             user_id,
             user_name,
             context,
-            image,
+            images,
             comment_count,
             liked,
             gmt_created,
@@ -66,8 +66,8 @@
             <if test="context != null">
                 context=#{context,jdbcType=LONGVARCHAR},
             </if>
-            <if test="image != null">
-                image=#{image},
+            <if test="images != null">
+                image=#{images},
             </if>
             <if test="commentCount != null">
                 comment_count=#{commentCount},
@@ -98,7 +98,7 @@
         user_id,
         user_name,
         context,
-        image,
+        images,
         comment_count,
         liked,
         gmt_created,
@@ -113,7 +113,7 @@
         user_id,
         user_name,
         context,
-        image,
+        images,
         comment_count,
         liked,
         gmt_created,

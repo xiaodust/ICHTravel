@@ -130,4 +130,21 @@ public class NoteServiceImpl implements NoteService {
         return noteDAO.update(noteDO).ToModel();
     }
 
+    @Override
+    public int add(Note note) {
+        if (note == null){
+            return 0;
+        }
+        if (StringUtils.isBlank(note.getUserId())){
+            return 0;
+        }
+        if (StringUtils.isBlank(note.getContext())){
+            return 0;
+        }
+
+       return noteDAO.insert(new NoteDO(note));
+
+    }
+
+
 }

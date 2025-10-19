@@ -3,6 +3,7 @@ package com.icht.backfront.model;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class Note {
     private String id;
@@ -13,7 +14,7 @@ public class Note {
 
     private String context;
 
-    private String image;
+    private List<String> images;
 
     private int commentCount;
 
@@ -56,12 +57,12 @@ public class Note {
         this.context = context;
     }
 
-    public String getImage() {
-        return image;
+    public List<String> getImages() {
+        return images;
     }
 
-    public void setImage(String image) {
-        this.image = image;
+    public void setImages(List<String> images) {
+        this.images = images;
     }
 
     public int getLiked() {
