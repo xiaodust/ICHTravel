@@ -24,6 +24,8 @@ public class ProductDetailApi {
         List<ProductDetail> productDetails=productDetailService.getByProductId(productId);
         result.setData(productDetails);
         result.setSuccess(true);
+        result.setCode("200");
+        result.setMessage("获取成功");
         return result;
 
     }

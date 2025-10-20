@@ -37,6 +37,7 @@ public class OrderApi {
         if (order==null || StringUtils.isEmpty(order.getProductDetailId())) {
             result.setSuccess(false);
             result.setMessage("order is null or productDetailId is null");
+            result.setCode("601");
             return result;
         }
 
@@ -44,6 +45,7 @@ public class OrderApi {
         if (StringUtils.isEmpty(userId)) {
             result.setSuccess(false);
             result.setMessage("无登录信息");
+            result.setCode("602");
             return result;
         }
 
