@@ -69,7 +69,7 @@
             > 
             记住密码
           </label>
-          <a class="forgot-link" @click="$router.push('/forget')">忘记密码?</a>
+          <a class="forgot-link" :class="{ 'link-active': isForgotLinkActive }" @mousedown="handleForgotPassword" @mouseup="isForgotLinkActive = false">忘记密码?</a>
         </div>
       </form>
 
@@ -144,7 +144,17 @@
             v-model.trim="registerForm.confirmPassword"
           >
         </div>
-        <button type="submit" class="login-btn">注册</button>
+        <!-- 错误提示 -->
+        <div v-if="registerError" class="error-message">
+          {{ registerError }}
+        </div>
+        <button 
+          type="submit" 
+          class="login-btn"
+          :disabled="isRegistering"
+        >
+          {{ isRegistering ? '注册中...' : '注册' }}
+        </button>
       </form>
     </div>
   </div>
@@ -154,9 +164,23 @@
 import { ref } from 'vue'; // Vue 3 组合式 API，用于创建响应式数据
 // 首先需要导入useRouter
 import { useRouter } from 'vue-router';
+// 导入axios用于发送HTTP请求
+import axios from 'axios';
 
 // 在setup中获取路由实例
 const router = useRouter();
+
+// 忘记密码链接的响应式状态
+const isForgotLinkActive = ref(false);
+
+// 处理忘记密码点击事件
+const handleForgotPassword = () => {
+  isForgotLinkActive.value = true;
+  // 添加短暂的延迟以显示视觉反馈
+  setTimeout(() => {
+    router.push('/forget');
+  }, 100);
+};
 
 // 实现doLogin方法
 const doLogin = () => {
@@ -192,13 +216,17 @@ const phoneForm = ref({
   code: ''
 });
 
-// 注册表单数据
+// 注册状态管理
 const registerForm = ref({
   username: '',
   phone: '',
   password: '',
   confirmPassword: ''
 });
+
+// 注册相关状态
+const isRegistering = ref(false); // 注册中状态
+const registerError = ref(''); // 注册错误信息
 
 // 验证码按钮状态（禁用/文本）
 const isCodeDisabled = ref(false);
@@ -292,34 +320,75 @@ const handlePhoneLogin = () => {
 };
 
 // 注册提交
-const handleRegister = () => {
+const handleRegister = async () => {
   const { username, phone, password, confirmPassword } = registerForm.value;
   const phoneReg = /^1[3-9]\d{9}$/;
   
+  // 重置错误信息
+  registerError.value = '';
+  
   // 表单验证逻辑
   if (!username) {
-    alert('请设置用户名');
+    registerError.value = '请设置用户名';
     return;
   }
   if (!phoneReg.test(phone)) {
-    alert('请输入有效的手机号');
+    registerError.value = '请输入有效的手机号';
     return;
   }
   if (password.length < 8) {
-    alert('密码长度不能少于8位');
+    registerError.value = '密码长度不能少于8位';
     return;
   }
   if (password !== confirmPassword) {
-    alert('两次输入的密码不一致');
+    registerError.value = '两次输入的密码不一致';
     return;
   }
 
-  // 模拟注册成功
-  alert('注册成功！');
-  // 注册成功后自动切换到账号登录
-  switchTab('account');
-  // 可自动填充用户名（提升用户体验）
-  accountForm.value.username = username;
+  try {
+    // 设置注册中状态
+    isRegistering.value = true;
+    
+    // 调用后端注册API - 直接指向后端8080端口，避免代理配置问题
+    // 注意：后端使用@RequestParam，需要传递查询参数
+    const response = await axios.post('http://localhost:8080/api/user/reg', null, {
+      params: {
+        name: username, // 注意：后端API参数名是name
+        password: password, // 后端API需要password参数
+        number: phone // 后端实现需要手机号参数
+      },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+    
+    // 处理响应 - 根据Result<User>的结构
+    if (response.data && response.data.success) {
+      // 注册成功
+      alert('注册成功！');
+      // 注册成功后自动切换到账号登录
+      switchTab('account');
+      // 可自动填充用户名（提升用户体验）
+      accountForm.value.username = username;
+      // 清空注册表单
+      registerForm.value = {
+        username: '',
+        phone: '',
+        password: '',
+        confirmPassword: ''
+      };
+    } else {
+      // 注册失败，显示错误信息
+      registerError.value = response.data.message || '注册失败，请稍后重试';
+    }
+  } catch (error) {
+    // 错误处理
+    console.error('注册请求出错：', error);
+    registerError.value = error.response?.data?.message || '网络错误，请检查您的连接';
+  } finally {
+    // 无论成功失败，都重置注册中状态
+    isRegistering.value = false;
+  }
 };
 </script>
 
@@ -499,6 +568,21 @@ const handleRegister = () => {
   transform: scale(0.99);
 }
 
+.login-btn:disabled {
+  background-color: #a0c4f1;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* 错误提示样式 */
+.error-message {
+  color: #e53e3e;
+  font-size: 14px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
 /* 额外选项（记住密码+忘记密码） */
 .extra-options {
   display: flex;
@@ -519,10 +603,22 @@ const handleRegister = () => {
 .forgot-link {
   color: #1a56db;
   text-decoration: none;
+  transition: all 0.2s ease;
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
 .forgot-link:hover {
   text-decoration: underline;
+  background-color: rgba(26, 86, 219, 0.05);
+  transform: translateY(-1px);
+}
+
+.forgot-link.link-active {
+  background-color: rgba(26, 86, 219, 0.1);
+  transform: scale(0.98);
+  transition: transform 0.05s ease;
 }
 
 /* 表单切换动画 */

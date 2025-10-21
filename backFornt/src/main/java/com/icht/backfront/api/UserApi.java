@@ -40,4 +40,10 @@ public class UserApi {
         return result;
     }
 
+    @PostMapping("/regPwd")
+    @ResponseBody
+    public Result<User> regPwd(@RequestParam String name, @RequestParam String number, @RequestParam String password) {
+    return userService.register(name, number, password);
+    }
+
 }

@@ -13,6 +13,6 @@ public interface UserService {
 
    public Boolean checkLogin(HttpServletRequest request);
 
-   public Result<User> forgotPassword(String name,String number);
+   public Result<User> forgotPassword(String name,String number,String password);
 
 }

@@ -5,56 +5,42 @@
       <!-- 头部标题 -->
       <div class="reset-header">
         <h1 class="reset-title">找回密码</h1>
-        <p class="reset-desc">请按照步骤提示重置您的密码</p>
+        <p class="reset-desc">请填写以下信息重置您的密码</p>
       </div>
 
-      <!-- 步骤指示器 -->
-      <div class="step-indicator">
-        <!-- 步骤1：验证身份 -->
-        <div class="step-item">
-          <div 
-            class="step-number"
-            :class="currentStep === 1 ? 'step-number--active' : 'step-number--inactive'"
-          >
-            1
-          </div>
-          <p class="step-text" :class="currentStep === 1 ? 'step-text--active' : 'step-text--inactive'">
-            验证身份
-          </p>
-        </div>
-
-        <!-- 连接线 -->
-        <div class="step-line">
-          <div 
-            class="step-progress"
-            :style="{ width: currentStep >= 2 ? '100%' : '0%' }"
-          ></div>
-        </div>
-
-        <!-- 步骤2：设置新密码 -->
-        <div class="step-item">
-          <div 
-            class="step-number"
-            :class="currentStep === 2 ? 'step-number--active' : 'step-number--inactive'"
-          >
-            2
-          </div>
-          <p class="step-text" :class="currentStep === 2 ? 'step-text--active' : 'step-text--inactive'">
-            设置新密码
-          </p>
-        </div>
-      </div>
-
-      <!-- 步骤内容容器 -->
+      <!-- 表单内容容器 -->
       <div class="step-content">
-        <!-- 步骤1：验证身份表单 -->
-        <div v-if="currentStep === 1" class="form-step">
-          <div class="form-hint">
-            <p>请输入您注册的手机号，我们将发送验证码进行身份验证</p>
+        <!-- 一次性展示所有表单字段 -->
+        <div v-if="currentStep !== 3" class="form-step animate-form">
+          <div class="form-hint form-animate" style="animation-delay: 0s;">
+            <p>请输入您注册的用户名、手机号、验证码并设置新密码</p>
+          </div>
+
+          <!-- 用户名输入 -->
+          <div class="form-group form-animate" style="animation-delay: 0.1s;">
+            <label for="username" class="form-label">用户名</label>
+            <div class="input-wrapper">
+              <span class="input-icon user-icon">👤</span>
+              <input 
+                type="text" 
+                id="username" 
+                v-model.trim="username"
+                class="form-input"
+                :class="usernameErrorShow ? 'form-input--error' : ''"
+                placeholder="请输入用户名" 
+                @input="usernameErrorShow = false"
+              >
+            </div>
+            <p 
+              class="form-error"
+              v-show="usernameErrorShow"
+            >
+              请输入用户名
+            </p>
           </div>
 
           <!-- 手机号输入 -->
-          <div class="form-group">
+          <div class="form-group form-animate" style="animation-delay: 0.2s;">
             <label for="phone" class="form-label">手机号</label>
             <div class="input-wrapper">
               <span class="input-icon phone-icon">📱</span>
@@ -78,7 +64,7 @@
           </div>
 
           <!-- 验证码输入 -->
-          <div class="form-group">
+          <div class="form-group form-animate" style="animation-delay: 0.3s;">
             <label for="verify-code" class="form-label">验证码</label>
             <div class="input-wrapper input-wrapper--code">
               <span class="input-icon code-icon">🔒</span>
@@ -100,23 +86,8 @@
             </div>
           </div>
 
-          <!-- 下一步按钮 -->
-          <button 
-            @click="goToStep2"
-            class="btn btn--primary btn--next"
-          >
-            下一步
-          </button>
-        </div>
-
-        <!-- 步骤2：设置新密码表单 -->
-        <div v-else-if="currentStep === 2" class="form-step">
-          <div class="form-hint">
-            <p>请设置新密码，密码长度至少8位，包含字母和数字</p>
-          </div>
-
           <!-- 新密码输入 -->
-          <div class="form-group">
+          <div class="form-group form-animate" style="animation-delay: 0.4s;">
             <label for="new-password" class="form-label">新密码</label>
             <div class="input-wrapper">
               <span class="input-icon pwd-icon">🔐</span>
@@ -156,7 +127,7 @@
           </div>
 
           <!-- 确认密码输入 -->
-          <div class="form-group">
+          <div class="form-group form-animate" style="animation-delay: 0.5s;">
             <label for="confirm-password" class="form-label">确认新密码</label>
             <div class="input-wrapper">
               <span class="input-icon pwd-icon">🔐</span>
@@ -187,14 +158,15 @@
           <!-- 提交按钮 -->
           <button 
             @click="submitReset"
-            class="btn btn--primary btn--submit"
+            class="btn btn--primary btn--submit form-animate"
+            style="animation-delay: 0.6s;"
           >
             确认重置
           </button>
         </div>
 
         <!-- 重置成功提示 -->
-        <div v-else-if="currentStep === 3" class="success-page">
+        <div v-else class="success-page">
           <div class="success-icon">✅</div>
           <h3 class="success-title">密码重置成功！</h3>
           <p class="success-desc">您的密码已成功更新，请使用新密码登录</p>
@@ -207,7 +179,7 @@
         </div>
 
         <!-- 返回登录链接 -->
-        <div class="back-login" v-show="currentStep < 3">
+        <div class="back-login back-login-animate" v-if="currentStep !== 3">
           <button 
             @click="goToLogin"
             class="back-login-btn"
@@ -230,11 +202,13 @@ const goToLogin = () => {
   router.push('/login'); // 按实际项目的登录页路由调整
 };
 
-// 2. 核心响应式状态（与原逻辑完全一致）
-const currentStep = ref(1); // 1-验证身份，2-设置密码，3-重置成功
+// 2. 核心响应式状态
+const currentStep = ref(1); // 1-表单页面，3-重置成功
+const username = ref(''); // 用户名
 const phone = ref(''); // 手机号
 const verifyCode = ref(''); // 验证码
 const phoneErrorShow = ref(false); // 手机号错误提示
+const usernameErrorShow = ref(false); // 用户名错误提示
 const isCodeDisabled = ref(false); // 验证码按钮禁用状态
 const codeBtnText = ref('获取验证码'); // 验证码按钮文本
 const countdownTimer = ref(null); // 验证码倒计时定时器
@@ -289,27 +263,7 @@ onUnmounted(() => {
 });
 
 
-// 4. 步骤切换逻辑（与原逻辑完全一致）
-const goToStep2 = () => {
-  // 1. 验证手机号
-  const phoneReg = /^1[3-9]\d{9}$/;
-  if (!phoneReg.test(phone.value)) {
-    phoneErrorShow.value = true;
-    return;
-  }
-  phoneErrorShow.value = false;
-
-  // 2. 验证验证码（6位数字）
-  const codeReg = /^\d{6}$/;
-  if (!codeReg.test(verifyCode.value)) {
-    alert('请输入有效的6位验证码');
-    return;
-  }
-
-  // 3. 切换到步骤2
-  currentStep.value = 2;
-  window.scrollTo({ top: 0, behavior: 'smooth' }); // 平滑滚动到顶部
-};
+// 4. 移除步骤切换逻辑，因为现在是一次性表单
 
 
 // 5. 密码相关交互（与原逻辑完全一致）
@@ -363,32 +317,56 @@ const checkPasswordMatch = () => {
 
 // 提交密码重置
 const submitReset = () => {
-  // 1. 密码长度验证
+  // 1. 验证用户名
+  if (!username.value.trim()) {
+    usernameErrorShow.value = true;
+    return;
+  }
+  usernameErrorShow.value = false;
+
+  // 2. 验证手机号
+  const phoneReg = /^1[3-9]\d{9}$/;
+  if (!phoneReg.test(phone.value)) {
+    phoneErrorShow.value = true;
+    return;
+  }
+  phoneErrorShow.value = false;
+
+  // 3. 验证验证码（6位数字）
+  const codeReg = /^\d{6}$/;
+  if (!codeReg.test(verifyCode.value)) {
+    alert('请输入有效的6位验证码');
+    return;
+  }
+
+  // 4. 密码长度验证
   if (newPassword.value.length < 8) {
     alert('密码长度至少8位');
     return;
   }
 
-  // 2. 密码格式验证（含字母和数字）
+  // 5. 密码格式验证（含字母和数字）
   const pwdReg = /(?=.*[A-Za-z])(?=.*\d)/;
   if (!pwdReg.test(newPassword.value)) {
     alert('密码必须包含字母和数字');
     return;
   }
 
-  // 3. 密码匹配验证
+  // 6. 密码匹配验证
   if (newPassword.value !== confirmPassword.value) {
     pwdMatchError.value = true;
     return;
   }
 
-  // 4. 模拟提交（实际项目替换为后端接口请求）
+  // 7. 模拟提交（实际项目替换为后端接口请求）
   console.log('密码重置请求参数：', {
+    username: username.value,
     phone: phone.value,
+    verifyCode: verifyCode.value,
     newPassword: newPassword.value
   });
 
-  // 5. 提交成功，切换到成功页面
+  // 8. 提交成功，切换到成功页面
   currentStep.value = 3;
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
@@ -455,75 +433,9 @@ const getStrengthTextClass = () => {
 }
 
 /* 4. 步骤指示器样式 */
-.step-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 32px 24px 24px;
-}
-
-.step-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 33.333%;
-}
-
-/* 步骤数字样式 */
-.step-number {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 2px solid;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 500;
-  font-size: 16px;
-}
-
-.step-number--active {
-  background-color: #3B82F6;
-  color: #ffffff;
-  border-color: #3B82F6;
-}
-
-.step-number--inactive {
-  background-color: #ffffff;
-  color: #9ca3af;
-  border-color: #e5e7eb;
-}
-
-/* 步骤文字样式 */
-.step-text {
-  font-size: 14px;
-  font-weight: 500;
-  margin-top: 8px;
-}
-
-.step-text--active {
-  color: #3B82F6;
-}
-
-.step-text--inactive {
-  color: #9ca3af;
-}
-
-/* 步骤连接线 */
-.step-line {
-  width: 33.333%;
-  height: 4px;
-  background-color: #e5e7eb;
-  position: relative;
-}
-
-.step-progress {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  background-color: #3B82F6;
-  transition: width 0.5s ease; /* 过渡动画 */
+/* 表单内容上边距调整 */
+.step-content {
+  padding-top: 24px;
 }
 
 /* 5. 表单步骤样式 */
@@ -580,6 +492,11 @@ const getStrengthTextClass = () => {
   left: 12px;
   font-size: 18px;
   color: #9ca3af;
+}
+
+/* 用户图标样式补充 */
+.user-icon {
+  font-size: 16px;
 }
 
 /* 输入框样式 */
@@ -794,6 +711,60 @@ const getStrengthTextClass = () => {
 
 .back-login-btn:hover {
   color: #3B82F6;
+}
+
+/* 10. 页面加载动画 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.form-animate {
+  opacity: 0;
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+/* 返回登录按钮的特殊动画 */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.back-login-animate {
+  opacity: 0;
+  animation: slideInLeft 0.5s ease forwards;
+  animation-delay: 0.7s;
+}
+
+/* 密码强度指示器的特殊动画 */
+@keyframes pulseIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.pwd-strength {
+  animation: pulseIn 0.3s ease-out;
 }
 
 /* 9. 全局样式重置（避免浏览器默认样式干扰） */

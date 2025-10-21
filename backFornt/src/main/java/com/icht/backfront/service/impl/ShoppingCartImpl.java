@@ -2,9 +2,7 @@ package com.icht.backfront.service.impl;
 
 import com.icht.backfront.dao.ShoppingCartDAO;
 import com.icht.backfront.dataobject.ShoppingCartDO;
-import com.icht.backfront.model.CartItem;
 import com.icht.backfront.model.ShoppingCart;
-import com.icht.backfront.service.CartItemService;
 import com.icht.backfront.service.ShoppingCartService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;

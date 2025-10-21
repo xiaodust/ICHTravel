@@ -1,8 +1,6 @@
 package com.icht.backfront.service.impl;
 
-import com.icht.backfront.dao.ShoppingCartDAO;
 import com.icht.backfront.dao.UserDAO;
-import com.icht.backfront.dataobject.ShoppingCartDO;
 import com.icht.backfront.dataobject.UserDO;
 import com.icht.backfront.model.Result;
 import com.icht.backfront.model.User;
@@ -131,7 +129,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Result<User> forgotPassword(String name, String number) {
+    public Result<User> forgotPassword(String name, String number,String password) {
         Result<User> result=new Result<>();
         result.setCode("200");
         if (StringUtils.isEmpty(name)){
@@ -139,12 +137,16 @@ public class UserServiceImpl implements UserService {
             result.setMessage("用户名不能为空");
             return result;
         }
-        if (userDAO.findByName(name)==null){
+        UserDO userDO=userDAO.findByName(name);
+        if (userDO==null){
             result.setCode("601");
             result.setMessage("用户不存在");
             return result;
         }
+        userDO.setPassword(password);
         result.setMessage("验证成功");
+        userDAO.update(userDO);
+        result.setData(userDO.ToMode());
         return  result;
 
     }
