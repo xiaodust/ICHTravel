@@ -41,6 +41,11 @@ public class UserServiceImpl implements UserService {
             result.setMessage("密码不能为空");
             return result;
         }
+        if (StringUtils.isEmpty(number)){
+            result.setCode("602");
+            result.setMessage("手机号不能为空");
+            return result;
+        }
 
         UserDO userDO=(UserDO) redisTemplate.opsForValue().get(name);
         if (userDO==null){
@@ -123,6 +128,25 @@ public class UserServiceImpl implements UserService {
         else {
             return true;
         }
+    }
+
+    @Override
+    public Result<User> forgotPassword(String name, String number) {
+        Result<User> result=new Result<>();
+        result.setCode("200");
+        if (StringUtils.isEmpty(name)){
+            result.setCode("600");
+            result.setMessage("用户名不能为空");
+            return result;
+        }
+        if (userDAO.findByName(name)==null){
+            result.setCode("601");
+            result.setMessage("用户不存在");
+            return result;
+        }
+        result.setMessage("验证成功");
+        return  result;
+
     }
 
 

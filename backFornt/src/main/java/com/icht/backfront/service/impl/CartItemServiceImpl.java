@@ -4,7 +4,6 @@ import com.icht.backfront.dao.CartItemDAO;
 import com.icht.backfront.dataobject.CartItemDO;
 import com.icht.backfront.model.CartItem;
 import com.icht.backfront.service.CartItemService;
-import com.icht.backfront.service.ShoppingCartService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
