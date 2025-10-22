@@ -297,12 +297,24 @@ const handleAccountLogin = async () => {
     
     // 处理响应
     if (response.data && response.data.success) {
-      // 登录成功
-      // 保存用户信息到localStorage，方便首页显示
-      const userData = {
-        name: username, // 用户名
-        avatar: 'https://q8.itc.cn/q_70/images03/20250304/f5873423f8b044d78aa8cf036bc132e0.jpeg' // 默认头像
-      };
+      // 登录成功 - 获取完整的用户信息
+      const userData = response.data.data || {};
+      console.log('登录成功，用户信息:', userData);
+      
+      // 保存用户ID到sessionStorage（与后端保持一致）
+      if (userData.id) {
+        sessionStorage.setItem('userId', userData.id);
+        console.log('已保存userId到sessionStorage:', userData.id);
+      }
+      
+      // 补充默认头像（如果后端没有返回）
+      // 使用与Profile.vue相同的默认头像URL
+      if (!userData.avatar) {
+        userData.avatar = 'https://q8.itc.cn/q_70/images03/20250304/f5873423f8b044d78aa8cf036bc132e0.jpeg';
+        console.log('已设置默认头像');
+      }
+      
+      // 保存完整用户信息到localStorage
       localStorage.setItem('userInfo', JSON.stringify(userData));
       
       alert('登录成功！');
@@ -371,9 +383,9 @@ const handleRegister = async () => {
     // 注意：后端使用@RequestParam，需要传递查询参数
     const response = await axios.post('http://localhost:8080/api/user/reg', null, {
       params: {
-        name: username, // 注意：后端API参数名是name
-        password: password, // 后端API需要password参数
-        number: phone // 后端实现需要手机号参数
+        name: username, // 用户名
+        password: password, // 密码
+        number: phone // 手机号 - 后端需要number字段名
       },
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -382,12 +394,27 @@ const handleRegister = async () => {
     
     // 处理响应 - 根据Result<User>的结构
     if (response.data && response.data.success) {
-      // 注册成功
-      // 保存用户信息到localStorage，这样用户可以直接登录
-      const userData = {
+      // 注册成功 - 获取完整的用户信息
+      const userData = response.data.data || {
         name: username, // 用户名
-        avatar: 'https://q8.itc.cn/q_70/images03/20250304/f5873423f8b044d78aa8cf036bc132e0.jpeg' // 默认头像
+        number: phone // 手机号 - 与后端字段名保持一致
       };
+      console.log('注册成功，用户信息:', userData);
+      
+      // 保存用户ID到sessionStorage（与后端保持一致）
+      if (userData.id) {
+        sessionStorage.setItem('userId', userData.id);
+        console.log('已保存userId到sessionStorage:', userData.id);
+      }
+      
+      // 补充默认头像（如果后端没有返回）
+      // 使用与Profile.vue相同的默认头像URL
+      if (!userData.avatar) {
+        userData.avatar = 'https://q8.itc.cn/q_70/images03/20250304/f5873423f8b044d78aa8cf036bc132e0.jpeg';
+        console.log('已设置默认头像');
+      }
+      
+      // 保存完整用户信息到localStorage
       localStorage.setItem('userInfo', JSON.stringify(userData));
       
       alert('注册成功！');

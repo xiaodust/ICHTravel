@@ -306,9 +306,14 @@
 
 <script setup>
 import { ref, reactive, toRefs, onMounted, inject } from 'vue';
+import { useRouter } from 'vue-router';
+import axios from 'axios';
 
 // 注入弹窗工具
 const modal = inject('modal');
+
+// 路由实例
+const router = useRouter();
 
 // 默认头像
 const defaultAvatar = 'https://picsum.photos/id/1005/200/200';
@@ -379,19 +384,19 @@ const cityMap = {
 
 // 用户信息
 const userInfo = reactive({
-  userId: 'FY202500867',
+  userId: '',
   nickname: '非遗爱好者',
-  avatar: 'https://picsum.photos/id/64/200/200',
+  avatar: 'https://q8.itc.cn/q_70/images03/20250304/f5873423f8b044d78aa8cf036bc132e0.jpeg',
   gender: 'secret',
-  bio: '热爱传统文化，喜欢探索各种非遗技艺',
-  phone: '13812345678',
-  email: 'user@example.com',
-  province: '江苏省',
-  city: '苏州市'
+  bio: '',
+  phone: '',
+  email: '',
+  province: '',
+  city: ''
 });
 
 // 保存用户信息副本用于重置
-const originalUserInfo = { ...userInfo };
+const originalUserInfo = { ...JSON.parse(JSON.stringify(userInfo)) };
 
 // 通知设置
 const notificationSettings = reactive({
@@ -420,6 +425,101 @@ const hasUpdate = ref(false);
 const activeTab = ref('profile');
 const cities = ref([]);
 const { province, city } = toRefs(userInfo);
+
+// 从后端获取用户信息
+const fetchUserInfo = async () => {
+  try {
+    // 优先从sessionStorage获取userId
+    let userId = sessionStorage.getItem('userId');
+    
+    // 如果sessionStorage中没有，再从localStorage获取
+    if (!userId) {
+      const savedUserInfo = localStorage.getItem('userInfo');
+      if (savedUserInfo) {
+        const parsedUserInfo = JSON.parse(savedUserInfo);
+        userId = parsedUserInfo.id;
+      }
+    }
+    
+    if (!userId) {
+      console.error('未找到用户ID，无法获取用户信息');
+      return;
+    }
+    
+    // 调用后端接口获取用户信息
+    const response = await axios.get(`http://localhost:8080/api/user/${userId}`);
+    
+    if (response.data && response.data.success) {
+      const userData = response.data.data;
+      
+      // 更新用户信息
+      // 优先使用nickName，其次使用name
+      if (userData.nickName) {
+        userInfo.nickname = userData.nickName;
+      } else if (userData.name) {
+        userInfo.nickname = userData.name;
+      }
+      
+      // 更新手机号 - 使用number字段
+      if (userData.number) {
+        userInfo.phone = userData.number;
+      }
+      
+      // 更新个人签名 - 使用signature字段
+      if (userData.signature) {
+        userInfo.bio = userData.signature;
+      }
+      
+      // 更新头像
+      if (userData.avatar) {
+        userInfo.avatar = userData.avatar;
+      }
+      
+      // 更新ID
+      userInfo.userId = userData.id || userId;
+      
+      // 将最新的用户信息保存到localStorage
+      localStorage.setItem('userInfo', JSON.stringify(userData));
+    }
+  } catch (error) {
+    console.error('获取用户信息时发生错误：', error);
+    // 如果API请求失败，尝试从localStorage加载
+    tryLoadFromLocalStorage();
+  }
+};
+
+// 从localStorage加载用户信息
+const tryLoadFromLocalStorage = () => {
+  try {
+    const savedUserInfo = localStorage.getItem('userInfo');
+    if (savedUserInfo) {
+      const userData = JSON.parse(savedUserInfo);
+      
+      // 更新用户信息
+      if (userData.nickName) {
+        userInfo.nickname = userData.nickName;
+      } else if (userData.name) {
+        userInfo.nickname = userData.name;
+      }
+      
+      if (userData.number) {
+        userInfo.phone = userData.number;
+      }
+      
+      if (userData.signature) {
+        userInfo.bio = userData.signature;
+      }
+      
+      if (userData.avatar) {
+        userInfo.avatar = userData.avatar;
+      }
+      
+      userInfo.userId = userData.id || userInfo.userId;
+    }
+  } catch (error) {
+    console.error('从localStorage加载用户信息失败：', error);
+  }
+};
 
 // 加载城市列表
 const loadCities = () => {
@@ -453,12 +553,57 @@ const handleAvatarChange = (e) => {
   }
 };
 
-// 保存个人资料
-const saveProfile = () => {
-  // 模拟保存成功
-  modal.toast('个人信息保存成功');
-  // 更新原始数据
-  Object.assign(originalUserInfo, { ...userInfo });
+// 保存个人资料 - 调用后端update接口
+const saveProfile = async () => {
+  try {
+    // 从sessionStorage获取userId（与后端保持一致）
+    const userId = sessionStorage.getItem('userId');
+    
+    if (!userId) {
+      throw new Error('用户身份验证失败，请重新登录');
+    }
+    
+    // 调用后端update接口 - 使用POST方法，与后端@PostMapping注解匹配
+    const response = await axios.post('http://localhost:8080/api/user/update', {
+      userId: userId,
+      nickName: userInfo.nickname,  // 使用正确的参数名nickName
+      signature: userInfo.bio       // 使用bio作为signature参数值
+    }, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      transformRequest: [(data) => {
+        let ret = '';
+        for (let it in data) {
+          ret += encodeURIComponent(it) + '=' + encodeURIComponent(data[it]) + '&';
+        }
+        return ret.slice(0, -1);
+      }]
+    });
+    
+    if (response.data && response.data.success) {
+      // 更新本地存储中的用户信息
+      const savedUserInfo = localStorage.getItem('userInfo');
+      if (savedUserInfo) {
+        const parsedUserInfo = JSON.parse(savedUserInfo);
+        parsedUserInfo.nickName = userInfo.nickname;
+        parsedUserInfo.signature = userInfo.bio;
+        if (userInfo.avatar) {
+          parsedUserInfo.avatar = userInfo.avatar;
+        }
+        localStorage.setItem('userInfo', JSON.stringify(parsedUserInfo));
+      }
+      
+      alert('个人信息保存成功');
+      // 更新原始数据
+      Object.assign(originalUserInfo, { ...JSON.parse(JSON.stringify(userInfo)) });
+    } else {
+      throw new Error('更新失败：' + (response.data?.message || '未知错误'));
+    }
+  } catch (error) {
+    console.error('更新个人信息时发生错误：', error);
+    alert('更新失败：' + error.message);
+  }
 };
 
 // 重置个人资料
@@ -607,16 +752,35 @@ const contactSupport = () => {
   `);
 };
 
-const handleLogout = () => {
-  modal.open('退出登录', '确定要退出当前账号吗？', 'confirm', true, () => {
-    modal.toast('已成功退出登录');
-    // 实际项目中这里会跳转到登录页
-  });
+const handleLogout = async () => {
+  try {
+    // 清理本地登录状态
+    localStorage.removeItem('userInfo');
+    sessionStorage.removeItem('userId');
+    
+    // 尝试调用后端登出接口（可选）
+    try {
+      await axios.get('http://localhost:8080/api/user/logout');
+    } catch (error) {
+      console.log('后端登出接口调用失败，但不影响前端登出');
+    }
+    
+    alert('登出成功');
+    // 退出后跳转到主页
+    router.push('/home');
+  } catch (error) {
+    console.error('登出处理异常:', error);
+    alert('登出失败，请重试');
+  }
 };
 
-// 组件挂载时加载城市
-onMounted(() => {
+// 组件挂载时加载城市和用户信息
+onMounted(async () => {
   loadCities();
+  // 从后端或localStorage获取用户信息
+  await fetchUserInfo();
+  // 更新原始数据用于重置
+  Object.assign(originalUserInfo, { ...JSON.parse(JSON.stringify(userInfo)) });
 });
 </script>
 

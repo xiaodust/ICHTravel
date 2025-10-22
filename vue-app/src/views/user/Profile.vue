@@ -6,7 +6,7 @@
         <!-- 头像区域 -->
         <div class="avatar-container">
           <img 
-            src="https://q8.itc.cn/q_70/images03/20250304/f5873423f8b044d78aa8cf036bc132e0.jpeg" 
+            :src="userInfo.avatar" 
             alt="用户头像" 
             class="avatar"
           >
@@ -25,7 +25,8 @@
         <h2 class="profile-name">{{ userInfo.nickname }}</h2>
         <p class="profile-detail">
           手机号：{{ userInfo.phone }}<br>
-          注册时间：{{ userInfo.registerTime }} 加入点苏记
+          注册时间：{{ userInfo.registerTime }} 加入点苏记<br>
+          <span v-if="userInfo.signature">个人签名：{{ userInfo.signature }}</span>
         </p>
         
         <!-- 成长数据 -->
@@ -44,6 +45,11 @@
           </button>
           <button @click="handleShowLevelRule" class="btn btn-outline">
             查看等级规则
+          </button>
+
+          <!-- 测试按钮 - 用于调试 -->
+          <button @click="fetchUserInfo" class="btn btn-outline">
+            刷新用户信息
           </button>
         </div>
       </div>
@@ -91,16 +97,21 @@
 </template>
 
 <script setup>
-import { reactive, ref, inject } from 'vue';
+import { reactive, ref, inject, onMounted } from 'vue';
+import axios from 'axios';
 
 // 注入弹窗方法
 const modal = inject('modal');
 
-// 用户信息
+// 用户信息 - 从localStorage读取后端返回的userInfo数据
 const userInfo = reactive({
+  // 默认值
   nickname: '苏韵非遗爱好者',
-  phone: '138****5678',
+  name: '',
+  phone: '',
   registerTime: '2024.06.18',
+  Signature: '',
+  avatar: 'https://q8.itc.cn/q_70/images03/20250304/f5873423f8b044d78aa8cf036bc132e0.jpeg',
   growth: {
     points: 32,
     routes: 5,
@@ -154,20 +165,70 @@ const handleMedalTooltipHide = () => {
 // 编辑个人信息
 const handleEditProfile = () => {
   modal.open('编辑个人信息', `
-    <div class="form-group">
-      <label class="form-label" for="nickname">昵称：</label>
-      <input type="text" id="nickname" value="${userInfo.nickname}" class="form-input">
+    <div class="edit-profile-form">
+      <div class="form-group">
+        <label class="form-label" for="nickname">昵称：</label>
+        <input type="text" id="nickname" value="${userInfo.nickname}" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="signature">个人签名：</label>
+        <textarea id="signature" rows="3" placeholder="分享你的非遗故事..." class="form-input">${userInfo.signature || ''}</textarea>
+      </div>
     </div>
-    <div class="form-group">
-      <label class="form-label" for="signature">个人签名：</label>
-      <textarea id="signature" rows="2" placeholder="分享你的非遗故事..." class="form-input"></textarea>
-    </div>
-  `, 'edit-profile', true, () => {
-    const newNickname = document.getElementById('nickname').value;
-    if (newNickname) {
-      userInfo.nickname = newNickname;
+  `, 'edit-profile', true, async () => {
+    try {
+      const newNickname = document.getElementById('nickname').value.trim();
+      const newSignature = document.getElementById('signature').value.trim();
+      
+      // 从sessionStorage获取userId（与后端保持一致）
+      const userId = sessionStorage.getItem('userId');
+      
+      if (!userId) {
+        throw new Error('用户身份验证失败，请重新登录');
+      }
+      
+      // 调用后端update接口 - 使用POST方法，与后端@PostMapping注解匹配
+      const response = await axios.post('http://localhost:8080/api/user/update', {
+        userId: userId,
+        nickName: newNickname,
+        signature: newSignature
+      }, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        transformRequest: [(data) => {
+          let ret = '';
+          for (let it in data) {
+            ret += encodeURIComponent(it) + '=' + encodeURIComponent(data[it]) + '&';
+          }
+          return ret.slice(0, -1);
+        }]
+      });
+      
+      if (response.data && response.data.success) {
+        // 更新本地用户信息
+        if (newNickname) {
+          userInfo.nickname = newNickname;
+        }
+        userInfo.signature = newSignature;
+        
+        // 更新localStorage中的用户信息
+        const savedUserInfo = localStorage.getItem('userInfo');
+        if (savedUserInfo) {
+          const parsedUserInfo = JSON.parse(savedUserInfo);
+          parsedUserInfo.nickname = userInfo.nickname;
+          parsedUserInfo.signature = userInfo.signature;
+          localStorage.setItem('userInfo', JSON.stringify(parsedUserInfo));
+        }
+        
+        alert('个人信息更新成功');
+      } else {
+        throw new Error('更新失败：' + (response.data?.message || '未知错误'));
+      }
+    } catch (error) {
+      console.error('更新个人信息时发生错误：', error);
+      alert('更新失败：' + error.message);
     }
-    alert('个人信息已更新');
   });
 };
 
@@ -182,6 +243,179 @@ const handleShowLevelRule = () => {
     <p class="mt-2 text-sm">等级权益：黄金及以上可解锁专属非遗体验课，钻石可获得非遗传承人一对一指导机会。</p>
   `);
 };
+
+
+
+// 从后端获取用户信息
+const fetchUserInfo = async () => {
+  try {
+    console.log('开始从后端获取用户信息...');
+    
+    // 优先从sessionStorage获取userId（与后端保持一致）
+    let userId = sessionStorage.getItem('userId');
+    console.log('从sessionStorage获取的userId:', userId);
+    
+    // 如果sessionStorage中没有，再从localStorage获取
+    if (!userId) {
+      const savedUserInfo = localStorage.getItem('userInfo');
+      if (savedUserInfo) {
+        const parsedUserInfo = JSON.parse(savedUserInfo);
+        // 优先使用id字段（后端使用的字段名）
+        userId = parsedUserInfo.id;
+        console.log('从localStorage获取的用户id:', userId);
+      }
+    }
+    
+    if (!userId) {
+      console.error('未找到用户ID，无法获取用户信息。请确认用户已正确登录，并且session中保存了userId。');
+      alert('用户身份验证失败，请重新登录');
+      return;
+    }
+    
+    console.log('准备请求用户信息，userId:', userId);
+    
+    // 调用后端接口 - 直接指向后端8080端口，避免代理配置问题
+    console.log('发起API请求:', `http://localhost:8080/api/user/${userId}`);
+    const response = await axios.get(`http://localhost:8080/api/user/${userId}`);
+    
+    console.log('API响应数据:', response.data);
+    
+    if (response.data && response.data.success) {
+      const userData = response.data.data;
+      console.log('从后端获取的用户信息:', userData);
+      
+      // 更新用户信息
+      // 更新个人名称（优先使用nickName，其次使用name）
+      if (userData.nickName) {
+        userInfo.nickname = userData.nickName;
+      } else if (userData.name) {
+        userInfo.nickname = userData.name;
+      }
+      
+      // 更新手机号 - 优先使用number字段（与后端保持一致）
+      if (userData.number) {
+        console.log('使用number字段的手机号:', userData.number);
+        // 检查是否是有效的手机号格式
+        if (/^1[3-9]\d{9}$/.test(userData.number)) {
+          // 手机号脱敏显示
+          userInfo.phone = userData.number.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
+          console.log('脱敏后显示的手机号:', userInfo.phone);
+        } else {
+          console.warn('number字段包含无效的手机号格式:', userData.number);
+          userInfo.phone = userData.number; // 原样显示，避免正则错误
+        }
+      }
+      
+      // 更新注册时间 - 使用正确的字段名gmtCreated
+      if (userData.gmtCreated) {
+        try {
+          // 格式化时间戳为YYYY.MM.DD格式
+          const date = new Date(userData.gmtCreated);
+          if (!isNaN(date.getTime())) {
+            userInfo.registerTime = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+          }
+        } catch (dateError) {
+          console.warn('日期格式化失败:', dateError);
+        }
+      }
+      
+      // 更新个人签名
+      if (userData.signature) {
+        userInfo.signature = userData.signature;
+      }
+      
+      // 更新头像
+      if (userData.avatar) {
+        userInfo.avatar = userData.avatar;
+      }
+      
+      // 将最新的用户信息保存到localStorage，以便其他地方使用
+      try {
+        localStorage.setItem('userInfo', JSON.stringify(userData));
+      } catch (storageError) {
+        console.warn('保存用户信息到localStorage失败:', storageError);
+      }
+      
+    } else {
+      console.error('获取用户信息失败:', response.data?.message || '未知错误');
+      console.error('完整响应内容:', response.data);
+    }
+  } catch (error) {
+    console.error('获取用户信息时发生异常:', error);
+    console.error('错误详情:', error.response || error.message || error);
+    
+    // 检查是否是网络或连接问题
+    if (error.code === 'ERR_NETWORK' || error.message?.includes('Network')) {
+      console.warn('网络连接问题，尝试使用缓存数据');
+    }
+    
+    // 如果后端请求失败，尝试从localStorage获取（作为降级方案）
+    loadUserInfoFromLocalStorage();
+  } finally {
+    // 打印加载完成后的userInfo状态
+    console.log('用户信息加载完成，最终状态:', userInfo);
+  }
+};
+
+// 从localStorage读取用户信息（作为降级方案）
+const loadUserInfoFromLocalStorage = () => {
+  try {
+    console.log('开始从localStorage读取用户信息(降级方案)...');
+    const savedUserInfo = localStorage.getItem('userInfo');
+    
+    if (savedUserInfo) {
+      const parsedUserInfo = JSON.parse(savedUserInfo);
+      
+      // 更新个人名称
+      if (parsedUserInfo.nickName) {
+        userInfo.nickname = parsedUserInfo.nickName;
+      } else if (parsedUserInfo.name) {
+        userInfo.nickname = parsedUserInfo.name;
+      }
+      
+      // 更新手机号
+      if (parsedUserInfo.number) {
+        if (/^1[3-9]\d{9}$/.test(parsedUserInfo.number)) {
+          userInfo.phone = parsedUserInfo.number.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
+        } else {
+          userInfo.phone = parsedUserInfo.number;
+        }
+      } else if (parsedUserInfo.phone) {
+        userInfo.phone = parsedUserInfo.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
+      }
+      
+      // 更新注册时间
+      if (parsedUserInfo.gmtCreated) {
+        try {
+          const date = new Date(parsedUserInfo.gmtCreated);
+          if (!isNaN(date.getTime())) {
+            userInfo.registerTime = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+          }
+        } catch (dateError) {
+          console.warn('日期格式化失败:', dateError);
+        }
+      }
+      
+      // 更新个人签名
+      if (parsedUserInfo.Signature) {
+        userInfo.Signature = parsedUserInfo.Signature;
+      }
+      
+      // 更新头像
+      if (parsedUserInfo.avatar) {
+        userInfo.avatar = parsedUserInfo.avatar;
+      }
+    }
+  } catch (error) {
+    console.error('读取localStorage用户信息失败:', error);
+  }
+};
+
+// 页面加载时初始化
+onMounted(() => {
+  // 加载用户信息 - 从后端获取
+  fetchUserInfo();
+});
 
 // 积分兑换
 const handleExchangeScore = () => {
@@ -344,6 +578,53 @@ const handleExchangeScore = () => {
 .profile-actions {
   display: flex;
   gap: 12px;
+}
+
+/* 编辑个人信息表单样式 */
+.edit-profile-form {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.form-group {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.form-label {
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: #333;
+  min-width: 80px;
+  display: block;
+}
+
+.form-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+  transition: border-color 0.3s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #1E90FF;
+  box-shadow: 0 0 0 2px rgba(30, 144, 255, 0.1);
+}
+
+.form-input[type="text"] {
+  height: 36px;
+}
+
+.form-input[type="textarea"] {
+  resize: vertical;
+  min-height: 60px;
 }
 
 /* 勋章样式 */

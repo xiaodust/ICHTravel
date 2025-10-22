@@ -121,6 +121,26 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public Result<User> getByUserId(String id) {
+        Result<User> result=new Result<>();
+        result.setSuccess(true);
+        if (StringUtils.isEmpty(id)){
+            result.setCode("600");
+            result.setMessage("userId不能为空");
+            return result;
+        }
+        UserDO userDO=userDAO.findById(id);
+        if (userDO==null){
+            result.setCode("601");
+            result.setMessage("用户不存在");
+            return result;
+        }
+        result.setData(userDAO.findById(id).ToMode());
+        result.setMessage("查询成功");
+        return result;
+    }
+
+    @Override
     public Boolean checkLogin(HttpServletRequest request) {
         Object userId=request.getSession().getAttribute("userId");
         if (userId==null){
@@ -153,6 +173,18 @@ public class UserServiceImpl implements UserService {
         result.setData(userDO.ToMode());
         return  result;
 
+    }
+
+    @Override
+    public Result update(String userId,String nickName, String Signature) {
+        Result result=new Result<>();
+        result.setSuccess(true);
+        result.setMessage("修改成功");
+        UserDO userDO=userDAO.findById(userId);
+        userDO.setNickName(nickName);
+        userDO.setSignature(Signature);
+        userDAO.update(userDO);
+        return result;
     }
 
 
