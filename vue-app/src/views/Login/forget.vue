@@ -195,6 +195,7 @@
 <script setup>
 import { ref, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
+import axios from 'axios';
 
 // 1. 路由初始化（跳转登录页）
 const router = useRouter();
@@ -314,9 +315,9 @@ const checkPasswordStrength = () => {
 const checkPasswordMatch = () => {
   pwdMatchError.value = newPassword.value !== confirmPassword.value && confirmPassword.value.length > 0;
 };
-
-// 提交密码重置
-const submitReset = () => {
+  
+  // 提交密码重置
+const submitReset = async () => {
   // 1. 验证用户名
   if (!username.value.trim()) {
     usernameErrorShow.value = true;
@@ -358,17 +359,33 @@ const submitReset = () => {
     return;
   }
 
-  // 7. 模拟提交（实际项目替换为后端接口请求）
-  console.log('密码重置请求参数：', {
-    username: username.value,
-    phone: phone.value,
-    verifyCode: verifyCode.value,
-    newPassword: newPassword.value
-  });
-
-  // 8. 提交成功，切换到成功页面
-  currentStep.value = 3;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  try {
+    // 调用后端密码重置API
+    const response = await axios.post('http://localhost:8080/api/user/regPwd', null, {
+      params: {
+        name: username.value, // 后端API参数名是name
+        number: phone.value, // 后端API参数名是number
+        password: newPassword.value // 后端API参数名是password
+      },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+    
+    // 处理响应
+    if (response.data && response.data.success) {
+      // 密码重置成功，切换到成功页面
+      currentStep.value = 3;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      // 密码重置失败，显示错误信息
+      alert(response.data.message || '密码重置失败，请稍后重试');
+    }
+  } catch (error) {
+    // 错误处理
+    console.error('密码重置请求出错：', error);
+    alert(error.response?.data?.message || '网络错误，请检查您的连接');
+  }
 };
 
 
