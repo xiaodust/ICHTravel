@@ -42,7 +42,7 @@ public class NoteApi {
         return result;
     }
 
-    @GetMapping("/{userId}")
+    @GetMapping("/user/{userId}")
     @ResponseBody
     public Result<List<Note>> getByUserId(@PathVariable("userId") String userId) {
         Result<List<Note>> result = new Result<>();
@@ -60,7 +60,7 @@ public class NoteApi {
         result.setSuccess(true);
         result.setData(noteService.likeNote(id));
         result.setCode("200");
-        result.setCode("点赞成功");
+        result.setMessage("点赞成功");
         return result;
     }
 

@@ -134,6 +134,9 @@ public class NoteServiceImpl implements NoteService {
         if (StringUtils.isBlank(note.getContext())){
             return 0;
         }
+        note.setId(UUID.randomUUID().toString());
+        note.setLiked(0);
+        note.setCommentCount(0);
         note.setGmtCreated(LocalDateTime.now());
         note.setGmtModified(LocalDateTime.now());
        return noteDAO.insert(new NoteDO(note));

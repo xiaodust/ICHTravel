@@ -13,7 +13,7 @@ public interface CommentDAO {
 
     CommentDO selectById(String id);
 
-    List<CommentDO> selectByNoteId(int noteId);
+    List<CommentDO> selectByNoteId(String noteId);
 
     CommentDO update(CommentDO commentDO);
 

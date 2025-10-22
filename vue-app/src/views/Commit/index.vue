@@ -9,8 +9,8 @@
       </div>
       <div class="nav-actions">
         <button class="publish-btn" @click="showPublishModal = true">发布</button>
-        <div class="avatar" @click="$router.push('/user-center')">
-          <img src="https://picsum.photos/40/40?random=user" alt="用户头像" />
+        <div class="avatar" @click="$router.push('/user-center/profile')">
+          <img :src="currentUserAvatar" alt="用户头像" @error="onAvatarError" />
         </div>
       </div>
     </nav>
@@ -43,8 +43,6 @@
               <div class="author-name" @click="viewUser(note.authorName)">{{ note.authorName }}</div>
               <div class="author-tag">{{ note.authorTag }}</div>
             </div>
-            <button class="follow-btn" v-if="!note.isFollowing" @click.stop="toggleFollow(note)">关注</button>
-            <button class="following-btn" v-else @click.stop="toggleFollow(note)">已关注</button>
           </div>
 
           <!-- 笔记内容 -->
@@ -70,7 +68,6 @@
             </button>
             <button class="action-btn" @click="showCommentModal(note)">
               <i>💬</i>
-              <span>{{ note.commentCount }}</span>
             </button>
             <button class="action-btn" @click="toggleCollect(note)">
               <i>{{ note.isCollected ? '📌' : '📎' }}</i>
@@ -84,12 +81,12 @@
 
           <!-- 评论预览 -->
           <div class="comment-preview" v-if="note.comments.length > 0">
-            <div class="comment-item" v-for="(comment, i) in note.comments.slice(0, 2)" :key="i">
-              <span class="comment-user">{{ comment.user }}:</span>
+            <div class="comment-item" v-for="(comment, i) in note.comments.slice(0, COMMENT_PREVIEW_COUNT)" :key="i">
+              <span class="comment-user">{{ comment.userName || '匿名用户' }}:</span>
               <span class="comment-text">{{ comment.content }}</span>
             </div>
             <div class="view-more-comments" v-if="note.comments.length > 2" @click="showCommentModal(note)">
-              查看全部 {{ note.commentCount }} 条评论
+              查看全部评论
             </div>
           </div>
         </div>
@@ -105,7 +102,6 @@
               <div class="user-name" @click="viewUser(user.name)">{{ user.name }}</div>
               <div class="user-desc">{{ user.desc }}</div>
             </div>
-            <button class="follow-btn-sm" @click="followSuggestedUser(user)">关注</button>
           </div>
         </div>
 
@@ -137,6 +133,21 @@
             <div class="upload-btn">+ 上传图片</div>
             <input type="file" class="image-upload-input" ref="imageUpload" multiple accept="image/*" @change="handleImageUpload" />
           </div>
+          <!-- 新增：上传中的提示 -->
+          <div class="uploading-tip" v-if="isUploadingImages">图片上传中，请稍候...</div>
+          <!-- 新增：已上传图片预览 -->
+          <div class="uploaded-images-preview" v-if="uploadedImages.length">
+            <div class="preview-title">已上传图片</div>
+            <div class="preview-grid">
+              <img 
+                v-for="(img, idx) in uploadedImages" 
+                :key="idx" 
+                :src="img" 
+                alt="已上传图片" 
+                class="preview-img"
+              />
+            </div>
+          </div>
           <div class="topic-selector">
             <input type="text" placeholder="添加话题，如 #苏绣#" v-model="newNoteTopic" />
           </div>
@@ -158,9 +169,9 @@
         <div class="modal-body comment-body">
           <div class="comment-list">
             <div class="comment-item" v-for="(comment, i) in currentNote?.comments || []" :key="i">
-              <img :src="`https://picsum.photos/40/40?random=${i}`" alt="用户头像" class="comment-avatar" />
+              <img :src="comment.avatar || 'https://picsum.photos/40/40?random=default'" alt="用户头像" class="comment-avatar" />
               <div class="comment-content">
-                <div class="comment-user">{{ comment.user }}</div>
+                <div class="comment-user">{{ comment.userName || '匿名用户' }}</div>
                 <div class="comment-text">{{ comment.content }}</div>
               </div>
             </div>
@@ -188,8 +199,9 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, getCurrentInstance } from 'vue';
+import { ref, computed, nextTick, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import axios from 'axios';
 
 // 路由实例
 const router = useRouter();
@@ -205,103 +217,162 @@ const newNoteTopic = ref('');
 const newComment = ref('');
 const currentNote = ref(null);
 const imageUpload = ref(null);
+// 新增：上传中的状态与已上传图片的URL集合
+const isUploadingImages = ref(false);
+const uploadedImages = ref([]);
 
-// 笔记数据
-const notes = ref([
-  {
-    id: 1,
-    category: 'suxiu',
-    authorAvatar: 'https://picsum.photos/50/50?random=1',
-    authorName: '苏绣传承人李老师',
-    authorTag: '苏绣 · 国家级传承人',
-    isFollowing: false,
-    content: '今天分享一幅新完成的苏绣作品《江南春色》，采用了传统平针绣和乱针绣结合的手法，耗时三个月完成。苏绣的魅力在于它的细腻和灵动，每一针都凝聚着匠人的心血。',
-    images: [
-      'https://picsum.photos/600/400?random=10',
-      'https://picsum.photos/600/400?random=11'
-    ],
-    likeCount: 1243,
-    isLiked: false,
-    commentCount: 89,
-    isCollected: false,
-    comments: [
-      { user: '非遗爱好者', content: '太美了！请问李老师收徒吗？' },
-      { user: '手工达人', content: '这种配色太高级了，学习了！' }
-    ]
-  },
-  {
-    id: 2,
-    category: 'zisha',
-    authorAvatar: 'https://picsum.photos/50/50?random=2',
-    authorName: '紫砂匠人王师傅',
-    authorTag: '紫砂壶 · 工艺大师',
-    isFollowing: true,
-    content: '新出窑的一批紫砂壶，采用黄龙山原矿紫泥，全手工制作。每一把壶都有自己的特点，欢迎品鉴。#紫砂艺术 #手工制作',
-    images: [
-      'https://picsum.photos/600/400?random=12',
-      'https://picsum.photos/600/400?random=13',
-      'https://picsum.photos/600/400?random=14'
-    ],
-    likeCount: 856,
-    isLiked: true,
-    commentCount: 42,
-    isCollected: false,
-    comments: [
-      { user: '茶文化爱好者', content: '第三把壶的器型太漂亮了，请问出吗？' }
-    ]
-  },
-  {
-    id: 3,
-    category: 'yunjin',
-    authorAvatar: 'https://picsum.photos/50/50?random=3',
-    authorName: '云锦大师张',
-    authorTag: '云锦织造 · 非遗传承人',
-    isFollowing: false,
-    content: '云锦的织造工艺极为复杂，一天只能织出几厘米。这是新完成的"孔雀羽"纹样，采用了真金线织造，耗时半年才完成。#云锦 #传统织物',
-    images: [
-      'https://picsum.photos/600/400?random=15',
-    ],
-    likeCount: 987,
-    isLiked: false,
-    commentCount: 56,
-    isCollected: true,
-    comments: [
-      { user: '历史系学生', content: '太精美了！这和故宫收藏的那件很像' },
-      { user: '设计师', content: '这种配色太惊艳了，现代设计也能借鉴' }
-    ]
-  }
-]);
-
-// 推荐用户
+// 右侧栏：推荐传承人（示例数据）
 const suggestedUsers = ref([
-  {
-    id: 1,
-    avatar: 'https://picsum.photos/50/50?random=6',
-    name: '剪纸艺人刘',
-    desc: '非遗剪纸艺术创作者'
-  },
-  {
-    id: 2,
-    avatar: 'https://picsum.photos/50/50?random=7',
-    name: '陶瓷大师陈',
-    desc: '景德镇陶瓷技艺传承人'
-  },
-  {
-    id: 3,
-    avatar: 'https://picsum.photos/50/50?random=8',
-    name: '古琴演奏家吴',
-    desc: '传统古琴艺术传承人'
-  }
+  { id: 'u-heritage-1', name: '苏绣传人', desc: '苏绣针法与配色分享', avatar: 'https://picsum.photos/seed/suxiu/80/80' },
+  { id: 'u-heritage-2', name: '龙舟鼓手', desc: '端午龙舟训练记录', avatar: 'https://picsum.photos/seed/longzhou/80/80' },
+  { id: 'u-heritage-3', name: '苗族银匠', desc: '银饰打磨与纹饰', avatar: 'https://picsum.photos/seed/miao/80/80' },
+  { id: 'u-heritage-4', name: '古琴雅士', desc: '琴曲赏析与练习', avatar: 'https://picsum.photos/seed/guqin/80/80' },
+  { id: 'u-heritage-5', name: '年画匠人', desc: '木版年画开版与套印', avatar: 'https://picsum.photos/seed/nianhua/80/80' },
+  { id: 'u-heritage-6', name: '戏曲脸谱匠人', desc: '勾线与配色的气韵', avatar: 'https://picsum.photos/seed/lianpu/80/80' },
+  { id: 'u-heritage-7', name: '茶艺师', desc: '水温与出汤的拿捏', avatar: 'https://picsum.photos/seed/tea/80/80' },
+  { id: 'u-heritage-8', name: '唐卡画师', desc: '矿物颜料与起稿细节', avatar: 'https://picsum.photos/seed/tangka/80/80' },
+  { id: 'u-heritage-9', name: '景泰蓝工艺师', desc: '掐丝点蓝的火候', avatar: 'https://picsum.photos/seed/jingtai/80/80' },
+  { id: 'u-heritage-10', name: '剪纸艺人', desc: '窗花剪影里的年味', avatar: 'https://picsum.photos/seed/paper/80/80' }
 ]);
 
-// 热门话题
+// 右侧栏：热门话题（示例数据）
 const hotTopics = ref([
-  { name: '非遗传承', count: 2453 },
-  { name: '传统手工艺', count: 1876 },
-  { name: '苏绣之美', count: 1245 },
-  { name: '非遗新体验', count: 987 },
-  { name: '匠人精神', count: 856 }
+  { name: '苏绣', count: 26 },
+  { name: '龙舟', count: 19 },
+  { name: '苗族银饰', count: 14 },
+  { name: '古琴', count: 17 },
+  { name: '木版年画', count: 21 },
+  { name: '戏曲脸谱', count: 12 },
+  { name: '茶艺', count: 18 },
+  { name: '唐卡', count: 13 },
+  { name: '景泰蓝', count: 11 },
+  { name: '剪纸', count: 20 }
 ]);
+const notes = ref([]);
+const COMMENT_PREVIEW_COUNT = 2;
+
+// 加载说说（后端分页接口）
+const isLoadingNotes = ref(false);
+const pageParam = ref({ pagination: 0, pageSize: 10 });
+// 用户头像缓存，避免重复请求
+const userAvatarCache = new Map();
+const getUserAvatar = async (userId) => {
+  if (!userId) return 'https://picsum.photos/50/50?random=default';
+  if (userAvatarCache.has(userId)) return userAvatarCache.get(userId);
+  try {
+    const res = await axios.get(`http://localhost:8080/api/user/${userId}`);
+    const avatar = res?.data?.data?.avatar || 'https://picsum.photos/50/50?random=default';
+    userAvatarCache.set(userId, avatar);
+    return avatar;
+  } catch {
+    return 'https://picsum.photos/50/50?random=default';
+  }
+};
+
+// 新增：用户信息缓存（昵称/名称 + 头像）
+const userProfileCache = new Map();
+const getUserProfile = async (userId) => {
+  if (!userId) return { userName: '匿名用户', avatar: 'https://picsum.photos/50/50?random=default' };
+  if (userProfileCache.has(userId)) return userProfileCache.get(userId);
+  try {
+    const res = await axios.get(`http://localhost:8080/api/user/${userId}`);
+    const data = res?.data?.data || {};
+    const userName = data?.nickName || data?.name || '匿名用户';
+    const avatar = data?.avatar || 'https://picsum.photos/50/50?random=default';
+    const profile = { userName, avatar };
+    userProfileCache.set(userId, profile);
+    return profile;
+  } catch (e) {
+    console.error('获取用户信息失败:', e);
+    return { userName: '匿名用户', avatar: 'https://picsum.photos/50/50?random=default' };
+  }
+};
+const loadNotes = async () => {
+  if (isLoadingNotes.value) return;
+  isLoadingNotes.value = true;
+  try {
+    const res = await axios.get('http://localhost:8080/api/note/page', {
+      params: {
+        pagination: pageParam.value.pagination,
+        pageSize: pageParam.value.pageSize
+      }
+    });
+    if (res.data && res.data.success && res.data.code === '200') {
+      const paging = res.data.data || {};
+      const serverNotes = (paging.data || []).map(n => ({
+        id: n.id,
+        userId: n.userId,
+        category: 'all',
+        authorAvatar: 'https://picsum.photos/50/50?random=default',
+        authorName: n.userName || '未知用户',
+        authorTag: '非遗爱好者',
+        isFollowing: false,
+        content: n.context || '',
+        images: Array.isArray(n.images) ? n.images : [],
+        likeCount: typeof n.liked === 'number' ? n.liked : 0,
+        isLiked: false,
+        commentCount: typeof n.commentCount === 'number' ? n.commentCount : 0,
+        isCollected: false,
+        comments: []
+      }));
+      notes.value = serverNotes;
+      // 拉取真实头像
+      await Promise.all(notes.value.map(async (note) => {
+        note.authorAvatar = await getUserAvatar(note.userId);
+      }));
+      // 拉取每条说说的评论用于预览（完整列表，模板内截取前N条）
+      await Promise.all(notes.value.map(async (note) => {
+        const comments = await fetchComments(note.id);
+        note.comments = comments;
+      }));
+      // 同步分页信息（可选）
+      if (typeof paging.pageNum === 'number') pageParam.value.pagination = paging.pageNum;
+      if (typeof paging.pageSize === 'number') pageParam.value.pageSize = paging.pageSize;
+    } else {
+      console.warn('加载说说失败:', res.data?.message);
+    }
+  } catch (err) {
+    console.error('请求/api/note/page失败:', err);
+  } finally {
+    isLoadingNotes.value = false;
+  }
+};
+
+const currentUserAvatar = ref('https://picsum.photos/40/40?random=default');
+const onAvatarError = () => {
+  currentUserAvatar.value = 'https://picsum.photos/40/40?random=default';
+};
+const loadCurrentUserAvatar = async () => {
+  try {
+    let avatar = null;
+    // 优先从localStorage读取
+    const savedUserInfo = localStorage.getItem('userInfo');
+    if (savedUserInfo) {
+      const parsed = JSON.parse(savedUserInfo);
+      avatar = parsed?.avatar || null;
+      // 若本地无头像但有id，则从后端拉取
+      if (!avatar && parsed?.id) {
+        const res = await axios.get(`http://localhost:8080/api/user/${parsed.id}`);
+        avatar = res?.data?.data?.avatar || null;
+      }
+    } else {
+      // 尝试从session拿userId再请求后端
+      const userId = sessionStorage.getItem('userId');
+      if (userId) {
+        const res = await axios.get(`http://localhost:8080/api/user/${userId}`);
+        avatar = res?.data?.data?.avatar || null;
+      }
+    }
+    currentUserAvatar.value = avatar || 'https://picsum.photos/40/40?random=default';
+  } catch (e) {
+    currentUserAvatar.value = 'https://picsum.photos/40/40?random=default';
+  }
+};
+
+onMounted(() => {
+  loadNotes();
+  loadCurrentUserAvatar();
+});
 
 // 根据分类过滤笔记
 const filteredNotes = computed(() => {
@@ -329,15 +400,56 @@ const toggleFollow = (note) => {
 };
 
 // 方法：点赞/取消点赞
-const toggleLike = (note) => {
-  if (note.isLiked) {
-    note.likeCount -= 1;
-  } else {
-    note.likeCount += 1;
+const likeInFlight = new Set();
+const toggleLike = async (note) => {
+  if (!note || !note.id) return;
+  if (likeInFlight.has(note.id)) return; // 防重复点击
+  likeInFlight.add(note.id);
+  try {
+    if (note.isLiked) {
+      // 取消点赞
+      const res = await axios.post('http://localhost:8080/api/note/unlike', { id: note.id }, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        transformRequest: [(data) => `id=${encodeURIComponent(data.id)}`]
+      });
+      if (res.data && res.data.success && res.data.code === '200') {
+        const updated = res.data.data;
+        note.likeCount = typeof updated?.liked === 'number' ? updated.liked : Math.max(0, note.likeCount - 1);
+        note.isLiked = false;
+      } else {
+        // 后端失败时回退本地
+        note.likeCount = Math.max(0, note.likeCount - 1);
+        note.isLiked = false;
+      }
+    } else {
+      // 点赞
+      const res = await axios.post('http://localhost:8080/api/note/like', { id: note.id }, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        transformRequest: [(data) => `id=${encodeURIComponent(data.id)}`]
+      });
+      if (res.data && res.data.success && res.data.code === '200') {
+        const updated = res.data.data;
+        note.likeCount = typeof updated?.liked === 'number' ? updated.liked : note.likeCount + 1;
+        note.isLiked = true;
+      } else {
+        note.likeCount += 1;
+        note.isLiked = true;
+      }
+    }
+  } catch (e) {
+    // 网络错误时采用本地回退策略
+    if (note.isLiked) {
+      note.likeCount = Math.max(0, note.likeCount - 1);
+      note.isLiked = false;
+    } else {
+      note.likeCount += 1;
+      note.isLiked = true;
+    }
+    console.error('点赞接口异常:', e);
+  } finally {
+    likeInFlight.delete(note.id);
   }
-  note.isLiked = !note.isLiked;
 };
-
 // 方法：收藏/取消收藏
 const toggleCollect = (note) => {
   note.isCollected = !note.isCollected;
@@ -354,43 +466,97 @@ const shareNote = (note) => {
   // 实际项目中这里会调用分享API
 };
 
-// 方法：查看评论
-const showCommentModal = (note) => {
-  currentNote.value = JSON.parse(JSON.stringify(note)); // 深拷贝避免直接修改原数据
+// 从后端获取评论列表
+const fetchComments = async (noteId) => {
+  try {
+    const res = await axios.get(`http://localhost:8080/api/comment/${noteId}`);
+    if (res.data && res.data.success && res.data.code === '200') {
+      const list = Array.isArray(res.data.data) ? res.data.data : [];
+      // 并发拉取用户信息，填充昵称与头像
+      const enriched = await Promise.all(list.map(async (c) => {
+        const profile = await getUserProfile(c.userId);
+        return {
+          userId: c.userId || '',
+          userName: c.userName || profile.userName,
+          avatar: profile.avatar,
+          content: c.content || '',
+          gmtCreated: c.gmtCreated || null
+        };
+      }));
+      return enriched;
+    }
+  } catch (e) {
+    console.error('获取评论失败:', e);
+  }
+  return [];
+};
+
+// 方法：查看评论（打开弹窗并拉取后端评论）
+const showCommentModal = async (note) => {
+  currentNote.value = JSON.parse(JSON.stringify(note));
   newComment.value = '';
+  // 拉取后端评论
+  const comments = await fetchComments(note.id);
+  currentNote.value.comments = comments;
+  currentNote.value.commentCount = comments.length;
   showCommentBox.value = true;
-  
-  // 等待弹窗渲染完成后滚动到底部
   nextTick(() => {
     const commentList = document.querySelector('.comment-list');
     if (commentList) commentList.scrollTop = commentList.scrollHeight;
   });
 };
 
-// 方法：提交评论
-const submitComment = () => {
+// 方法：提交评论（调用后端接口）
+const submitComment = async () => {
   if (!newComment.value.trim() || !currentNote.value) return;
-  
-  currentNote.value.comments.push({
-    user: '我',
-    content: newComment.value
-  });
-  currentNote.value.commentCount += 1;
-  
-  // 更新原笔记数据
-  const index = notes.value.findIndex(n => n.id === currentNote.value.id);
-  if (index !== -1) {
-    notes.value[index].comments = [...currentNote.value.comments];
-    notes.value[index].commentCount = currentNote.value.commentCount;
+  // 获取当前用户ID
+  let userId = sessionStorage.getItem('userId');
+  if (!userId) {
+    try {
+      const savedUserInfo = localStorage.getItem('userInfo');
+      if (savedUserInfo) {
+        const parsed = JSON.parse(savedUserInfo);
+        userId = parsed?.id || parsed?.userId || '';
+      }
+    } catch {}
   }
-  
-  newComment.value = '';
-  
-  // 自动滚动到底部
-  nextTick(() => {
-    const commentList = document.querySelector('.comment-list');
-    if (commentList) commentList.scrollTop = commentList.scrollHeight;
-  });
+  if (!userId) {
+    alert('请先登录后再评论');
+    return;
+  }
+  // 构造后端Comment对象
+  const payload = {
+    noteId: currentNote.value.id,
+    userId: userId,
+    content: newComment.value
+  };
+  try {
+    const res = await axios.post('http://localhost:8080/api/comment/addcomment', payload, {
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (res.data && res.data.success && res.data.code === '200') {
+      // 重新拉取最新评论
+      const comments = await fetchComments(currentNote.value.id);
+      currentNote.value.comments = comments;
+      currentNote.value.commentCount = comments.length;
+      // 同步到原列表中的笔记
+      const index = notes.value.findIndex(n => n.id === currentNote.value.id);
+      if (index !== -1) {
+        notes.value[index].comments = comments;
+        notes.value[index].commentCount = comments.length;
+      }
+      newComment.value = '';
+      nextTick(() => {
+        const commentList = document.querySelector('.comment-list');
+        if (commentList) commentList.scrollTop = commentList.scrollHeight;
+      });
+    } else {
+      alert(res.data?.message || '评论失败');
+    }
+  } catch (e) {
+    console.error('提交评论失败:', e);
+    alert('提交评论失败，请稍后重试');
+  }
 };
 
 // 方法：查看用户主页
@@ -429,38 +595,77 @@ const followSuggestedUser = (user) => {
 };
 
 // 方法：发布笔记
-const publishNote = () => {
+const publishNote = async () => {
   if (!newNoteContent.value.trim()) {
     alert('请输入笔记内容');
     return;
   }
-  
-  // 创建新笔记对象
-  const newNote = {
-    id: notes.value.length + 1,
-    category: activeCategory.value !== 'recommend' ? activeCategory.value : 'all',
-    authorAvatar: 'https://picsum.photos/40/40?random=user',
-    authorName: '我',
-    authorTag: '非遗爱好者',
-    isFollowing: true,
-    content: newNoteContent.value + (newNoteTopic.value ? ` ${newNoteTopic.value}` : ''),
-    images: [],
-    likeCount: 0,
-    isLiked: false,
-    commentCount: 0,
-    isCollected: false,
-    comments: []
-  };
-  
-  // 添加到笔记列表最前面
-  notes.value.unshift(newNote);
-  
-  // 重置表单并关闭弹窗
-  newNoteContent.value = '';
-  newNoteTopic.value = '';
-  showPublishModal.value = false;
-  
-  alert('笔记发布成功！');
+
+  // 组装上下文（文本 + 话题）
+  const contextText = newNoteContent.value + (newNoteTopic.value ? ` ${newNoteTopic.value}` : '');
+
+  // 获取用户信息（userId / userName）
+  let userId = sessionStorage.getItem('userId') || '';
+  let userName = '';
+  try {
+    const savedUserInfo = localStorage.getItem('userInfo');
+    if (savedUserInfo) {
+      const parsedUserInfo = JSON.parse(savedUserInfo);
+      // 如果 session 中没有，则从 localStorage 兜底 userId
+      if (!userId) {
+        userId = parsedUserInfo.id || parsedUserInfo.userId || '';
+      }
+      // 始终从 localStorage 提取用户昵称/名称用于 userName
+      userName = parsedUserInfo.nickName || parsedUserInfo.name || '';
+    }
+  } catch (e) {
+    console.error('解析localStorage用户信息失败:', e);
+  }
+
+  try {
+    // 向后端提交笔记
+    const response = await axios.post('http://localhost:8080/api/note/add', {
+      userId: userId || '',
+      userName: userName || '我',
+      context: contextText,
+      images: uploadedImages.value
+    });
+
+    if (response.data && response.data.success) {
+      // 创建前端展示用笔记对象
+      const newNote = {
+        id: (notes.value.length + 1).toString(),
+        category: activeCategory.value !== 'recommend' ? activeCategory.value : 'all',
+        authorAvatar: 'https://picsum.photos/40/40?random=user',
+        authorName: userName || '我',
+        authorTag: '非遗爱好者',
+        isFollowing: true,
+        content: contextText,
+        images: [...uploadedImages.value],
+        likeCount: 0,
+        isLiked: false,
+        commentCount: 0,
+        isCollected: false,
+        comments: []
+      };
+
+      // 添加到笔记列表最前面
+      notes.value.unshift(newNote);
+
+      // 重置表单并关闭弹窗
+      newNoteContent.value = '';
+      newNoteTopic.value = '';
+      uploadedImages.value = [];
+      showPublishModal.value = false;
+
+      alert('笔记发布成功！');
+    } else {
+      alert(response.data?.message || '发布失败，请稍后重试');
+    }
+  } catch (error) {
+    console.error('发布笔记异常:', error);
+    alert(error.response?.data?.message || '网络错误，请检查后端服务是否启动');
+  }
 };
 
 // 方法：触发图片上传
@@ -471,20 +676,47 @@ const triggerImageUpload = () => {
 };
 
 // 方法：处理图片上传
-const handleImageUpload = (e) => {
+const handleImageUpload = async (e) => {
   const files = e.target.files;
-  if (files && files.length) {
-    alert(`已选择 ${files.length} 张图片，准备上传`);
-    // 实际项目中这里会处理图片上传逻辑
-    // 简单演示：将图片转为base64预览
-    Array.from(files).forEach(file => {
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        // 这里可以添加到预览列表
-        console.log('图片预览地址:', event.target.result);
-      };
-      reader.readAsDataURL(file);
-    });
+  if (!files || !files.length) return;
+
+  isUploadingImages.value = true;
+  alert(`已选择 ${files.length} 张图片，开始上传...`);
+
+  const uploadOne = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const base64Image = event.target.result;
+        const fileExtension = (file.type && file.type.split('/')[1]) || 'jpg';
+        // 调用后端上传接口
+        const res = await axios.post('http://localhost:8080/api/posts/upload', {
+          base64Image,
+          fileExtension
+        });
+        if (res.data && res.data.success) {
+          const imageUrl = res.data.data; // 后端返回的可访问URL
+          uploadedImages.value.push(imageUrl);
+          resolve(imageUrl);
+        } else {
+          reject(new Error(res.data?.message || '上传失败'));
+        }
+      } catch (err) {
+        reject(err);
+      }
+    };
+    reader.onerror = (err) => reject(err);
+    reader.readAsDataURL(file);
+  });
+
+  try {
+    await Promise.all(Array.from(files).map(uploadOne));
+    alert('所有图片上传完成');
+  } catch (err) {
+    console.error('上传图片出错:', err);
+    alert(err.message || '部分图片上传失败');
+  } finally {
+    isUploadingImages.value = false;
     // 清空input值，允许重复选择同一张图片
     e.target.value = '';
   }
@@ -1017,33 +1249,44 @@ const handleImageUpload = (e) => {
 }
 
 /* 评论弹窗样式 */
+.comment-modal .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #eee;
+}
+
 .comment-modal .modal-body {
   max-height: 60vh;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  padding: 12px 16px;
 }
 
 .comment-list {
   flex: 1;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   overflow-y: auto;
   max-height: 40vh;
 }
 
 .comment-item {
   display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid #f5f5f5;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed #f0f0f0;
 }
 
 .comment-avatar {
   width: 36px;
   height: 36px;
   border-radius: 50%;
+  border: 1px solid #f2f2f2;
   flex-shrink: 0;
+  object-fit: cover;
 }
 
 .comment-content {
@@ -1051,43 +1294,52 @@ const handleImageUpload = (e) => {
 }
 
 .comment-user {
-  font-weight: 500;
-  margin-bottom: 5px;
-  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  font-size: 14px;
+  color: #333;
 }
 
 .comment-text {
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.6;
+  color: #555;
+  word-break: break-word;
 }
 
 .comment-input-area {
   display: flex;
-  gap: 10px;
-  padding-top: 15px;
+  gap: 8px;
+  padding-top: 12px;
   border-top: 1px solid #f5f5f5;
 }
 
 .comment-input-area input {
   flex: 1;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 20px;
+  padding: 10px 12px;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
   font-size: 14px;
+  outline: none;
+}
+
+.comment-input-area input:focus {
+  border-color: #4c9cff;
+  box-shadow: 0 0 0 3px rgba(76, 156, 255, 0.15);
 }
 
 .send-comment {
-  padding: 5px 15px;
-  background-color: #1E90FF;
+  padding: 10px 14px;
+  background-color: #4c9cff;
   color: white;
   border: none;
-  border-radius: 20px;
+  border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
 .send-comment:hover {
-  background-color: #0d76d0;
+  background-color: #3a89e6;
 }
 
 /* 图片上传隐藏input */
@@ -1138,5 +1390,29 @@ const handleImageUpload = (e) => {
     padding: 5px 10px;
     font-size: 13px;
   }
+}
+.uploading-tip {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #999;
+}
+.uploaded-images-preview {
+  margin-top: 10px;
+}
+.preview-title {
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 6px;
+}
+.preview-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.preview-img {
+  width: 80px;
+  height: 80px;
+  border-radius: 6px;
+  object-fit: cover;
 }
 </style>
