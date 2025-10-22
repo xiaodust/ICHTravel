@@ -30,7 +30,16 @@
           <a href="javascript:;" class="nav-link" @click="$router.push('/user-center')">个人中心</a>
         </li>
       </ul>
-      <button class="login-btn" @click="$router.push('/login')">登录</button>
+      <div class="user-section">
+        <template v-if="isLoggedIn">
+          <div class="user-info" @click="$router.push('/user-center')">
+            <img :src="userInfo.avatar" alt="用户头像" class="user-avatar">
+            <span class="user-name">{{ userInfo.name || '用户' }}</span>
+          </div>
+          <button class="logout-btn" @click="handleLogout">登出</button>
+        </template>
+        <button v-else class="login-btn" @click="$router.push('/login')">登录</button>
+      </div>
     </nav>
 
     <!-- 顶部Banner -->
@@ -188,6 +197,51 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+
+// 用户登录状态
+const isLoggedIn = ref(false);
+// 用户信息
+const userInfo = ref({
+  name: '',
+  avatar: 'https://q8.itc.cn/q_70/images03/20250304/f5873423f8b044d78aa8cf036bc132e0.jpeg' // 默认头像
+});
+
+// 检测登录状态 - 完全依赖localStorage
+const checkLoginStatus = () => {
+  try {
+    // 从localStorage检查是否有用户信息
+    const savedUserInfo = localStorage.getItem('userInfo');
+    if (savedUserInfo) {
+      // 有用户信息则认为已登录
+      isLoggedIn.value = true;
+      userInfo.value = JSON.parse(savedUserInfo);
+    } else {
+      // 无用户信息则认为未登录
+      isLoggedIn.value = false;
+    }
+  } catch (error) {
+    console.error('检查登录状态异常:', error);
+    isLoggedIn.value = false;
+  }
+};
+
+// 处理登出 - 完全前端实现
+const handleLogout = () => {
+  try {
+    // 清理本地登录状态
+    isLoggedIn.value = false;
+    localStorage.removeItem('userInfo');
+    
+    alert('登出成功');
+  } catch (error) {
+    console.error('登出处理异常:', error);
+  }
+};
+
+// 组件挂载时检查登录状态
+onMounted(() => {
+  checkLoginStatus();
+});
 
 const route = useRoute();
 const router = useRouter();
@@ -372,6 +426,8 @@ onMounted(() => {
   document.addEventListener('mouseup', handleBallEnd);
   document.addEventListener('touchend', handleBallEnd);
   window.addEventListener('resize', handleWindowResize);
+  // 检查登录状态
+  checkLoginStatus();
 });
 onUnmounted(() => {
   document.removeEventListener('mousemove', handleBallMove);
@@ -404,6 +460,48 @@ onUnmounted(() => {
   position: sticky;
   top: 0;
   z-index: 999;
+}
+
+/* 用户区域样式 */
+.user-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-name {
+  font-size: 14px;
+  color: #333;
+}
+
+.logout-btn {
+  background-color: #f5f5f5;
+  color: #666;
+  border: 1px solid #ddd;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.logout-btn:hover {
+  background-color: #e5e5e5;
+  color: #333;
 }
 .logo {
   font-size: 24px;

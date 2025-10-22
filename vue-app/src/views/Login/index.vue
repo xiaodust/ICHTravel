@@ -60,7 +60,7 @@
             v-model.trim="accountForm.password"
           >
         </div>
-        <button type="submit" class="login-btn" @click="doLogin">登录</button>
+        <button type="button" class="login-btn" @click="handleAccountLogin">登录</button>
         <div class="extra-options">
           <label>
             <input 
@@ -103,7 +103,7 @@
             {{ codeBtnText }}
           </button>
         </div>
-        <button type="submit" class="login-btn" @click="doLogin">登录</button>
+        <button type="button" class="login-btn" @click="handlePhoneLogin">登录</button>
       </form>
 
       <!-- 注册表单 -->
@@ -298,6 +298,13 @@ const handleAccountLogin = async () => {
     // 处理响应
     if (response.data && response.data.success) {
       // 登录成功
+      // 保存用户信息到localStorage，方便首页显示
+      const userData = {
+        name: username, // 用户名
+        avatar: 'https://q8.itc.cn/q_70/images03/20250304/f5873423f8b044d78aa8cf036bc132e0.jpeg' // 默认头像
+      };
+      localStorage.setItem('userInfo', JSON.stringify(userData));
+      
       alert('登录成功！');
       // 登录成功后跳转到主页面
       router.push('/home');
@@ -376,6 +383,13 @@ const handleRegister = async () => {
     // 处理响应 - 根据Result<User>的结构
     if (response.data && response.data.success) {
       // 注册成功
+      // 保存用户信息到localStorage，这样用户可以直接登录
+      const userData = {
+        name: username, // 用户名
+        avatar: 'https://q8.itc.cn/q_70/images03/20250304/f5873423f8b044d78aa8cf036bc132e0.jpeg' // 默认头像
+      };
+      localStorage.setItem('userInfo', JSON.stringify(userData));
+      
       alert('注册成功！');
       // 注册成功后自动切换到账号登录
       switchTab('account');
