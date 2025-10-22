@@ -3,6 +3,14 @@ import Home from "@/views/Home/index.vue";
 import Login from "@/views/Login/index.vue";
 import Forget from "@/views/Login/forget.vue";
 import Mall from "@/views/Mall/index.vue";
+import MainLayout from "../views/layout/MainLayout.vue";
+import Profile from "../views/user/Profile.vue";
+import Orders from "../views/user/Orders.vue";
+import MyRoutes from "../views/user/MyRoutes.vue";
+import Appointments from "../views/user/Appointments.vue";
+import BrowsingHistory from "../views/user/BrowsingHistory.vue";
+import Settings from "../views/user/Settings.vue";
+import Medals from "../views/user/Medals.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -47,7 +55,44 @@ const router = createRouter({
     },
     {
       path: "/user-center",
-      component: () => import("@/views/Person/index.vue"),
+      component: MainLayout,
+      children:[
+        {
+          path:'profile',
+          name:'profile',
+          component:Profile,
+        },
+        {
+          path:'orders',
+          name:'orders',
+          component:Orders,
+        },
+        {
+          path:'routes-section',
+          name:'routes-section',
+          component:MyRoutes,
+        },
+        {
+          path:'appointments',
+          name:'appointments',
+          component:Appointments,
+        },
+        {
+          path:'browsing',
+          name:'browsing',
+          component:BrowsingHistory,
+        },
+        {
+          path:'settings',
+          name:'settings',
+          component:Settings,
+        },
+        {
+          path:'medals',
+          name:'medals',
+          component:Medals,
+        }
+      ]
     },
     {
       path: "/shop-car",
