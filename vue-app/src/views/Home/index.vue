@@ -27,14 +27,14 @@
           <a href="javascript:;" class="nav-link" @click="$router.push('/heritage-commit')">交流平台</a>
         </li>
         <li class="nav-item">
-          <a href="javascript:;" class="nav-link" @click="$router.push('/user-center')">个人中心</a>
+          <a href="javascript:;" class="nav-link" @click="gotoUserCenter">个人中心</a>
         </li>
       </ul>
       <div class="user-section">
         <template v-if="isLoggedIn">
-          <div class="user-info" @click="$router.push('/user-center')">
+          <div class="user-info" @click="gotoUserCenter">
             <img :src="userInfo.avatar" alt="用户头像" class="user-avatar">
-            <span class="user-name">{{ userInfo.name || '用户' }}</span>
+            <span class="user-name">{{ userInfo.nickName || userInfo.name || '用户' }}</span>
           </div>
           <button class="logout-btn" @click="handleLogout">登出</button>
         </template>
@@ -197,6 +197,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import axios from 'axios';
 
 // 用户登录状态
 const isLoggedIn = ref(false);
@@ -206,7 +207,7 @@ const userInfo = ref({
   avatar: 'https://q8.itc.cn/q_70/images03/20250304/f5873423f8b044d78aa8cf036bc132e0.jpeg' // 默认头像
 });
 
-// 检测登录状态 - 完全依赖localStorage
+// 检测登录状态 - 依赖localStorage
 const checkLoginStatus = () => {
   try {
     // 从localStorage检查是否有用户信息
@@ -215,6 +216,10 @@ const checkLoginStatus = () => {
       // 有用户信息则认为已登录
       isLoggedIn.value = true;
       userInfo.value = JSON.parse(savedUserInfo);
+      // 如果有userId，获取最新用户信息
+      if (userInfo.value.id) {
+        fetchUserInfo(userInfo.value.id);
+      }
     } else {
       // 无用户信息则认为未登录
       isLoggedIn.value = false;
@@ -225,12 +230,57 @@ const checkLoginStatus = () => {
   }
 };
 
-// 处理登出 - 完全前端实现
-const handleLogout = () => {
+// 获取用户详细信息
+const fetchUserInfo = async (userId) => {
+  try {
+    const response = await axios.get(`/api/user/${userId}`);
+    if (response.data && response.data.success && response.data.data) {
+      const userData = response.data.data;
+      // 更新用户信息，只使用User对象中有的字段
+      const updatedUserInfo = {
+        ...userInfo.value,
+        name: userData.name || userInfo.value.name,
+        nickName: userData.nickName || userInfo.value.nickName || '',
+        number: userData.number || userInfo.value.number || '',
+        Signature: userData.Signature || userInfo.value.Signature || '',
+        avatar: userData.avatar || userInfo.value.avatar,
+        gmtCreated: userData.gmtCreated || userInfo.value.gmtCreated,
+       
+      };
+      
+      userInfo.value = updatedUserInfo;
+      localStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
+    }
+  } catch (error) {
+    console.error('获取用户信息异常:', error);
+    // 错误时保留本地缓存的用户信息
+  }
+};
+
+// 跳转到个人中心
+const gotoUserCenter = () => {
+  if (isLoggedIn.value) {
+    // 已登录跳转到个人信息界面
+    router.push('/user-center/profile');
+  } else {
+    // 未登录跳转到登录界面
+    router.push('/login');
+  }
+};
+
+// 处理登出
+const handleLogout = async () => {
   try {
     // 清理本地登录状态
     isLoggedIn.value = false;
     localStorage.removeItem('userInfo');
+    
+    // 尝试调用后端登出接口（可选）
+    try {
+      await axios.get('/api/user/logout');
+    } catch (error) {
+      console.log('后端登出接口调用失败，但不影响前端登出');
+    }
     
     alert('登出成功');
   } catch (error) {
