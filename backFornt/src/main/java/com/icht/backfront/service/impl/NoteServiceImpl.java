@@ -12,6 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -20,14 +21,6 @@ import java.util.UUID;
 public class NoteServiceImpl implements NoteService {
     @Autowired
     private NoteDAO noteDAO;
-    @Override
-    public int save(Note note) {
-        if (StringUtils.isBlank(note.getId())){
-            note.setId(UUID.randomUUID().toString());
-            return noteDAO.insert(new NoteDO(note));
-        }
-        return noteDAO.insert(new NoteDO(note));
-    }
 
     @Override
     public int delete(String id) {
@@ -141,7 +134,8 @@ public class NoteServiceImpl implements NoteService {
         if (StringUtils.isBlank(note.getContext())){
             return 0;
         }
-
+        note.setGmtCreated(LocalDateTime.now());
+        note.setGmtModified(LocalDateTime.now());
        return noteDAO.insert(new NoteDO(note));
 
     }

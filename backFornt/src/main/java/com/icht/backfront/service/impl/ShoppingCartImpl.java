@@ -2,14 +2,13 @@ package com.icht.backfront.service.impl;
 
 import com.icht.backfront.dao.ShoppingCartDAO;
 import com.icht.backfront.dataobject.ShoppingCartDO;
-import com.icht.backfront.model.CartItem;
 import com.icht.backfront.model.ShoppingCart;
-import com.icht.backfront.service.CartItemService;
 import com.icht.backfront.service.ShoppingCartService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +25,8 @@ public class ShoppingCartImpl implements ShoppingCartService {
         shoppingCart.setNumber(0);
         List<String> itemIds=new ArrayList<String>();
         shoppingCart.setItemId(itemIds);
+        shoppingCart.setGmtCreated(LocalDateTime.now());
+        shoppingCart.setGmtModified(LocalDateTime.now());
         return shoppingCartDAO.insertShoppingCart(new ShoppingCartDO(shoppingCart));
     }
 

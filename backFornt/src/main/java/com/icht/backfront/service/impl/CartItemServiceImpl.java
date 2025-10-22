@@ -4,10 +4,10 @@ import com.icht.backfront.dao.CartItemDAO;
 import com.icht.backfront.dataobject.CartItemDO;
 import com.icht.backfront.model.CartItem;
 import com.icht.backfront.service.CartItemService;
-import com.icht.backfront.service.ShoppingCartService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -36,6 +36,8 @@ public class CartItemServiceImpl implements CartItemService {
             cartItemDO.setTotalPrice(cartItem.getTotalPrice()+cartItemDO.getTotalPrice());
             return cartItemDAO.update(cartItemDO);
         }
+        cartItem.setGmtCreated(LocalDateTime.now());
+        cartItem.setGmtModified(LocalDateTime.now());
         return cartItemDAO.insert(new CartItemDO(cartItem));
     }
 

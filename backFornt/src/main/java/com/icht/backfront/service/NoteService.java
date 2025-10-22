@@ -7,7 +7,6 @@ import com.icht.backfront.param.BasePageParam;
 import java.util.List;
 
 public interface NoteService {
-    public int save(Note note);
 
     public int delete(String id);
 
