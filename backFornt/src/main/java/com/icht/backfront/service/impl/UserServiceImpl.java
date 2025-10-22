@@ -187,6 +187,29 @@ public class UserServiceImpl implements UserService {
         return result;
     }
 
+    @Override
+    public Result<User> updateAvatar(String userId, String avatar) {
+        Result<User> result=new Result<>();
+        if (StringUtils.isEmpty(userId)){
+            result.setCode("600");
+            result.setMessage("userId不能为空");
+            return result;
+        }
+        UserDO userDO=userDAO.findById(userId);
+        if (userDO==null){
+            result.setCode("601");
+            result.setMessage("查询不到该用户");
+            return result;
+        }
+        result.setSuccess(true);
+        result.setCode("200");
+        userDO.setAvatar(avatar);
+        userDO.setGmtModified(LocalDateTime.now());
+        userDAO.update(userDO);
+        result.setData(userDO.ToMode());
+        return  result;
+    }
+
 
 }
 

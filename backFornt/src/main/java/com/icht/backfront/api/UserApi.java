@@ -59,4 +59,10 @@ public class UserApi {
          return userService.update(userId,nickName,signature);
     }
 
+    @PostMapping("/updateAvatar")
+    @ResponseBody
+    public Result<User> updateAvatar(@RequestParam String userId,@RequestParam String avatar) {
+        return userService.updateAvatar(userId,avatar);
+    }
+
 }

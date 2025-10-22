@@ -20,4 +20,5 @@ public interface UserService {
 
    public Result<User> update(String userId,String nickName,String Signature);
 
+   public Result<User> updateAvatar(String userId,String avatar);
 }

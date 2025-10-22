@@ -34,24 +34,10 @@
           累计点亮非遗点：<span class="highlight">{{ userInfo.growth.points }}</span>个 | 
           创作路线数：<span class="highlight">{{ userInfo.growth.routes }}</span>条 | 
           获得勋章：<span class="highlight">{{ userInfo.growth.medals }}</span>枚 | 
-          可用积分：<span class="highlight">{{ userInfo.growth.score }}</span>分 
-          <button @click="handleExchangeScore" class="exchange-btn">兑换</button>
+          可用积分：<span class="highlight">{{ userInfo.growth.score }}</span>分
         </div>
         
-        <!-- 操作按钮 -->
-        <div class="profile-actions">
-          <button @click="handleEditProfile" class="btn btn-outline">
-            编辑个人信息
-          </button>
-          <button @click="handleShowLevelRule" class="btn btn-outline">
-            查看等级规则
-          </button>
-
-          <!-- 测试按钮 - 用于调试 -->
-          <button @click="fetchUserInfo" class="btn btn-outline">
-            刷新用户信息
-          </button>
-        </div>
+        <!-- 操作按钮区域 - 已清空 -->
       </div>
     </div>
     
@@ -67,8 +53,6 @@
           v-for="(medal, index) in userInfo.medals" 
           :key="index"
           class="medal-item"
-          @mouseenter="handleMedalTooltipShow(medal.tooltip, $event)"
-          @mouseleave="handleMedalTooltipHide()"
         >
           <div class="medal-icon" :class="medal.active ? 'medal-active' : ''">
             <div 
@@ -84,24 +68,16 @@
         </div>
       </div>
       
-      <!-- 勋章悬浮提示 -->
-      <div 
-        v-if="tooltipVisible"
-        class="tooltip"
-        :style="{ left: tooltipLeft + 'px', top: tooltipTop + 'px' }"
-      >
-        {{ tooltipText }}
-      </div>
+      <!-- 勋章悬浮提示已移除 -->
     </div>
   </section>
 </template>
 
 <script setup>
-import { reactive, ref, inject, onMounted } from 'vue';
+import { reactive, onMounted } from 'vue';
 import axios from 'axios';
 
-// 注入弹窗方法
-const modal = inject('modal');
+// 移除模态框相关代码
 
 // 用户信息 - 从localStorage读取后端返回的userInfo数据
 const userInfo = reactive({
@@ -143,106 +119,7 @@ const userInfo = reactive({
   ]
 });
 
-// 勋章提示
-const tooltipVisible = ref(false);
-const tooltipText = ref('');
-const tooltipLeft = ref(0);
-const tooltipTop = ref(0);
-
-// 勋章提示显示
-const handleMedalTooltipShow = (text, event) => {
-  tooltipText.value = text;
-  tooltipLeft.value = event.pageX + 10;
-  tooltipTop.value = event.pageY;
-  tooltipVisible.value = true;
-};
-
-// 勋章提示隐藏
-const handleMedalTooltipHide = () => {
-  tooltipVisible.value = false;
-};
-
-// 编辑个人信息
-const handleEditProfile = () => {
-  modal.open('编辑个人信息', `
-    <div class="edit-profile-form">
-      <div class="form-group">
-        <label class="form-label" for="nickname">昵称：</label>
-        <input type="text" id="nickname" value="${userInfo.nickname}" class="form-input">
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="signature">个人签名：</label>
-        <textarea id="signature" rows="3" placeholder="分享你的非遗故事..." class="form-input">${userInfo.signature || ''}</textarea>
-      </div>
-    </div>
-  `, 'edit-profile', true, async () => {
-    try {
-      const newNickname = document.getElementById('nickname').value.trim();
-      const newSignature = document.getElementById('signature').value.trim();
-      
-      // 从sessionStorage获取userId（与后端保持一致）
-      const userId = sessionStorage.getItem('userId');
-      
-      if (!userId) {
-        throw new Error('用户身份验证失败，请重新登录');
-      }
-      
-      // 调用后端update接口 - 使用POST方法，与后端@PostMapping注解匹配
-      const response = await axios.post('http://localhost:8080/api/user/update', {
-        userId: userId,
-        nickName: newNickname,
-        signature: newSignature
-      }, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        transformRequest: [(data) => {
-          let ret = '';
-          for (let it in data) {
-            ret += encodeURIComponent(it) + '=' + encodeURIComponent(data[it]) + '&';
-          }
-          return ret.slice(0, -1);
-        }]
-      });
-      
-      if (response.data && response.data.success) {
-        // 更新本地用户信息
-        if (newNickname) {
-          userInfo.nickname = newNickname;
-        }
-        userInfo.signature = newSignature;
-        
-        // 更新localStorage中的用户信息
-        const savedUserInfo = localStorage.getItem('userInfo');
-        if (savedUserInfo) {
-          const parsedUserInfo = JSON.parse(savedUserInfo);
-          parsedUserInfo.nickname = userInfo.nickname;
-          parsedUserInfo.signature = userInfo.signature;
-          localStorage.setItem('userInfo', JSON.stringify(parsedUserInfo));
-        }
-        
-        alert('个人信息更新成功');
-      } else {
-        throw new Error('更新失败：' + (response.data?.message || '未知错误'));
-      }
-    } catch (error) {
-      console.error('更新个人信息时发生错误：', error);
-      alert('更新失败：' + error.message);
-    }
-  });
-};
-
-// 查看等级规则
-const handleShowLevelRule = () => {
-  modal.open('非遗守护官等级规则', `
-    <ul class="list-disc pl-5 space-y-2">
-      <li><strong>青铜守护官</strong>：点亮10个非遗点</li>
-      <li><strong>黄金守护官</strong>：点亮50个非遗点 + 创作3条路线</li>
-      <li><strong>钻石守护官</strong>：点亮100个非遗点 + 创作10条路线 + 获得15枚勋章</li>
-    </ul>
-    <p class="mt-2 text-sm">等级权益：黄金及以上可解锁专属非遗体验课，钻石可获得非遗传承人一对一指导机会。</p>
-  `);
-};
+// 移除了不需要的功能函数
 
 
 
@@ -417,26 +294,7 @@ onMounted(() => {
   fetchUserInfo();
 });
 
-// 积分兑换
-const handleExchangeScore = () => {
-  modal.open('积分兑换', `
-    <div class="form-group">
-      <label class="form-label">可用积分：<span class="highlight">${userInfo.growth.score}</span>分</label>
-    </div>
-    <div class="form-group">
-      <label class="form-label" for="exchange-goods">可兑换商品：</label>
-      <select id="exchange-goods" class="form-select">
-        <option value="bookmark">非遗书签（80积分）</option>
-        <option value="postcard">非遗明信片（120积分）</option>
-        <option value="ticket">体验课优惠券（300积分）</option>
-      </select>
-    </div>
-  `, 'exchange', true, () => {
-    const select = document.getElementById('exchange-goods');
-    const goods = select.options[select.selectedIndex].text;
-    alert(`已兑换${goods}，扣除对应积分`);
-  });
-};
+// 移除了积分兑换功能
 </script>
 
 <style scoped>
@@ -478,35 +336,7 @@ const handleExchangeScore = () => {
   text-decoration: underline;
 }
 
-/* 按钮样式 */
-.btn {
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
-}
-
-.btn-primary {
-  background-color: #1E90FF;
-  color: white;
-  border: 1px solid #1E90FF;
-}
-
-.btn-primary:hover {
-  background-color: #187bcd;
-  border-color: #187bcd;
-}
-
-.btn-outline {
-  background-color: transparent;
-  color: #1E90FF;
-  border: 1px solid #1E90FF;
-}
-
-.btn-outline:hover {
-  background-color: rgba(30, 144, 255, 0.1);
-}
+/* 按钮样式已移除 */
 
 /* 个人信息样式 */
 .profile-header {
@@ -565,67 +395,11 @@ const handleExchangeScore = () => {
   font-weight: bold;
 }
 
-.exchange-btn {
-  padding: 2px 8px;
-  background-color: #1E90FF;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-}
+/* 移除了操作按钮相关样式 */
 
-.profile-actions {
-  display: flex;
-  gap: 12px;
-}
+/* 已清空操作按钮区域 */
 
-/* 编辑个人信息表单样式 */
-.edit-profile-form {
-  width: 100%;
-  max-width: 400px;
-  margin: 0 auto;
-}
-
-.form-group {
-  margin-bottom: 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.form-label {
-  font-weight: 500;
-  margin-bottom: 6px;
-  color: #333;
-  min-width: 80px;
-  display: block;
-}
-
-.form-input {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  box-sizing: border-box;
-  transition: border-color 0.3s;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: #1E90FF;
-  box-shadow: 0 0 0 2px rgba(30, 144, 255, 0.1);
-}
-
-.form-input[type="text"] {
-  height: 36px;
-}
-
-.form-input[type="textarea"] {
-  resize: vertical;
-  min-height: 60px;
-}
+/* 表单样式已移除 */
 
 /* 勋章样式 */
 .medals-grid {
@@ -699,76 +473,9 @@ const handleExchangeScore = () => {
   color: #999;
 }
 
-/* 悬浮提示 */
-.tooltip {
-  position: absolute;
-  background-color: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  z-index: 100;
-  pointer-events: none;
-}
+/* 悬浮提示样式已移除 */
 
-/* 表单样式 */
-.form-group {
-  margin-bottom: 16px;
-}
-
-.form-label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 14px;
-}
-
-.form-input {
-  padding: 6px 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  outline: none;
-  width: 100%;
-}
-
-.form-input:focus {
-  border-color: #1E90FF;
-}
-
-.form-select {
-  padding: 6px 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  outline: none;
-  background-color: white;
-  width: 100%;
-}
-
-/* 列表样式 */
-.list-disc {
-  list-style-type: disc;
-}
-
-.space-y-2 > * {
-  margin-bottom: 8px;
-}
-
-.space-y-2 > *:last-child {
-  margin-bottom: 0;
-}
-
-.text-sm {
-  font-size: 14px;
-}
-
-.mt-2 {
-  margin-top: 8px;
-}
-
-.pl-5 {
-  padding-left: 20px;
-}
+/* 多余表单样式和列表样式已移除 */
 
 /* 响应式样式 */
 @media (max-width: 768px) {

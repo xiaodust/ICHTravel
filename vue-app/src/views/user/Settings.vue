@@ -83,7 +83,7 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">个人简介</label>
+          <label class="form-label">个性签名</label>
           <textarea 
             v-model="userInfo.bio" 
             class="form-control form-textarea"
@@ -543,12 +543,116 @@ const handleAvatarUpload = () => {
 const handleAvatarChange = (e) => {
   const file = e.target.files[0];
   if (file) {
-    // 模拟上传成功
+    // 检查文件类型
+    if (!file.type.match('image.*')) {
+      alert('请选择图片文件');
+      return;
+    }
+    
+    // 检查文件大小（限制为2MB）
+    if (file.size > 2 * 1024 * 1024) {
+      alert('图片大小不能超过2MB');
+      return;
+    }
+    
     const reader = new FileReader();
-    reader.onload = (event) => {
-      userInfo.avatar = event.target.result;
-      modal.toast('头像上传成功');
+    reader.onload = async (event) => {
+      const base64Image = event.target.result;
+      // 临时显示上传的头像
+      userInfo.avatar = base64Image;
+      
+      try {
+        // 提取文件扩展名
+        const fileExtension = file.type.split('/')[1] || 'jpg';
+        
+        // 调用后端上传接口
+        const response = await axios.post('http://localhost:8080/api/posts/upload', {
+          base64Image: base64Image,
+          fileExtension: fileExtension
+        });
+        
+        if (response.data && response.data.success) {
+          // 获取后端返回的图片URL
+          const imageUrl = response.data.data;
+          
+          // 优先从sessionStorage获取userId
+          let userId = sessionStorage.getItem('userId');
+          
+          // 如果sessionStorage中没有，尝试从localStorage的userInfo中获取
+          if (!userId) {
+            try {
+              const savedUserInfo = localStorage.getItem('userInfo');
+              if (savedUserInfo) {
+                const userData = JSON.parse(savedUserInfo);
+                userId = userData.id || userData.userId;
+              }
+            } catch (e) {
+              console.error('解析localStorage中的用户信息失败:', e);
+            }
+          }
+          
+          if (userId) {
+            // 调用updateAvatar接口更新数据库
+            try {
+              await axios.post('http://localhost:8080/api/user/updateAvatar', {
+                userId: userId,
+                avatar: imageUrl
+              }, {
+                headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                transformRequest: [(data) => {
+                  let ret = '';
+                  for (let it in data) {
+                    ret += encodeURIComponent(it) + '=' + encodeURIComponent(data[it]) + '&';
+                  }
+                  return ret.slice(0, -1);
+                }]
+              });
+              
+              // 更新用户头像显示
+              userInfo.avatar = imageUrl;
+              alert('头像上传成功并已更新到数据库');
+              
+              // 更新localStorage中的头像信息
+              const savedUserInfo = localStorage.getItem('userInfo');
+              if (savedUserInfo) {
+                const parsedUserInfo = JSON.parse(savedUserInfo);
+                parsedUserInfo.avatar = imageUrl;
+                localStorage.setItem('userInfo', JSON.stringify(parsedUserInfo));
+              }
+            } catch (dbError) {
+              console.error('更新数据库头像信息失败:', dbError);
+              alert('头像上传成功，但更新数据库失败，请稍后重试');
+            }
+          } else {
+            // 如果没有userId，提供更友好的提示，并允许用户继续使用
+            alert('注意：无法更新头像到账户信息。请尝试刷新页面或重新登录后再更换头像。');
+            // 即使无法更新到数据库，也允许用户在当前会话中看到头像变更
+          }
+        } else {
+          throw new Error(response.data?.message || '上传失败');
+        }
+      } catch (error) {
+        console.error('头像上传失败:', error);
+        alert('头像上传失败: ' + error.message);
+        // 恢复默认头像
+        if (userInfo.avatar !== defaultAvatar) {
+          const savedUserInfo = localStorage.getItem('userInfo');
+          if (savedUserInfo) {
+            const parsedUserInfo = JSON.parse(savedUserInfo);
+            userInfo.avatar = parsedUserInfo.avatar || defaultAvatar;
+          } else {
+            userInfo.avatar = defaultAvatar;
+          }
+        }
+      }
     };
+    
+    reader.onerror = () => {
+      alert('图片读取失败，请重试');
+    };
+    
     reader.readAsDataURL(file);
   }
 };
@@ -563,12 +667,16 @@ const saveProfile = async () => {
       throw new Error('用户身份验证失败，请重新登录');
     }
     
-    // 调用后端update接口 - 使用POST方法，与后端@PostMapping注解匹配
-    const response = await axios.post('http://localhost:8080/api/user/update', {
+    // 构建请求参数，包含头像信息
+    const updateData = {
       userId: userId,
       nickName: userInfo.nickname,  // 使用正确的参数名nickName
-      signature: userInfo.bio       // 使用bio作为signature参数值
-    }, {
+      signature: userInfo.bio,       // 使用bio作为signature参数值
+      avatar: userInfo.avatar        // 添加头像URL
+    };
+    
+    // 调用后端update接口 - 使用POST方法，与后端@PostMapping注解匹配
+    const response = await axios.post('http://localhost:8080/api/user/update', updateData, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
