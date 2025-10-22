@@ -8,6 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -18,6 +19,8 @@ public class CommentServiceImpl implements CommentService {
     private CommentDAO commentDAO;
     @Override
     public int save(Comment comment) {
+        comment.setGmtCreated(LocalDateTime.now());
+        comment.setGmtModified(LocalDateTime.now());
        if(StringUtils.isBlank(comment.getId())){
            comment.setId(UUID.randomUUID().toString());
            return commentDAO.insert(new CommentDO(comment));

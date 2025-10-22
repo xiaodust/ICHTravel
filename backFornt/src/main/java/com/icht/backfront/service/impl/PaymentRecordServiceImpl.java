@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -27,6 +28,8 @@ public class PaymentRecordServiceImpl implements PaymentRecordService {
         if (StringUtils.isEmpty(paymentRecord.getId())){
             PaymentRecordDO paymentRecordDO=new PaymentRecordDO(paymentRecord);
             paymentRecordDO.setId(UUID.randomUUID().toString());
+            paymentRecordDO.setGmtCreated(LocalDateTime.now());
+            paymentRecordDO.setGmtModified(LocalDateTime.now());
             int insert = paymentRecordDAO.insert(paymentRecordDO);
             if (insert<1){
                 return null;
@@ -35,6 +38,7 @@ public class PaymentRecordServiceImpl implements PaymentRecordService {
             return paymentRecord;
         }else {
             PaymentRecordDO paymentRecordDO = new PaymentRecordDO(paymentRecord);
+            paymentRecordDO.setGmtModified(LocalDateTime.now());
             int updateSize = paymentRecordDAO.update(paymentRecordDO);
             if (updateSize < 1) {
                 return null;
@@ -64,6 +68,7 @@ public class PaymentRecordServiceImpl implements PaymentRecordService {
             return null;
         }
         PaymentRecordDO paymentRecordDO=new PaymentRecordDO(paymentRecord);
+        paymentRecordDO.setGmtModified(LocalDateTime.now());
         int updateSize = paymentRecordDAO.update(paymentRecordDO);
         if (updateSize < 1) {
             return null;

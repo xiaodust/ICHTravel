@@ -49,6 +49,8 @@ public class OrderServiceImpl implements OrderService {
         order.setId(UUID.randomUUID().toString());
         order.setOrderStatus(OrderStatus.WAIT_BUYER_PAY);
         order.setOrderNumber(createOrderNumber());
+        order.setGmtCreated(LocalDateTime.now());
+        order.setGmtModified(LocalDateTime.now());
         OrderDO orderDO=new OrderDO(order);
         int insert = orderDAO.insert(orderDO);
         if (insert==1){
@@ -76,6 +78,7 @@ public class OrderServiceImpl implements OrderService {
             return null;
         }
         orderDO.setStatus(orderStatus.toString());
+        orderDO.setGmtModified(LocalDateTime.now());
         orderDAO.update(orderDO);
         return orderDO.TOModel();
     }
@@ -95,9 +98,11 @@ public class OrderServiceImpl implements OrderService {
                 return null;
             }
             productDetail.setStock(productDetail.getStock()-1);
+            productDetail.setGmtModified(LocalDateTime.now());
             productDetailService.save(productDetail);
             Product product= productService.getById(productDetail.getProductId());
             product.setPurchaseNum(product.getPurchaseNum()+1);
+            product.setGmtModified(LocalDateTime.now());
             productService.save(product);
         } catch (Exception e){
              logger.error("",e);

@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -59,6 +60,8 @@ public class UserServiceImpl implements UserService {
         userDO1.setName(name);
         userDO1.setPassword(password);
         userDO1.setNumber(number);
+        userDO1.setGmtCreated(LocalDateTime.now());
+        userDO1.setGmtModified(LocalDateTime.now());
         userDAO.save(userDO1);
         shoppingCartService.insertShoppingCart(userDO1.getId());
 
@@ -145,6 +148,7 @@ public class UserServiceImpl implements UserService {
         }
         userDO.setPassword(password);
         result.setMessage("验证成功");
+        userDO.setGmtModified(LocalDateTime.now());
         userDAO.update(userDO);
         result.setData(userDO.ToMode());
         return  result;

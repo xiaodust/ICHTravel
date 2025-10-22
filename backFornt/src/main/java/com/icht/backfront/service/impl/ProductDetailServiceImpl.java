@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -41,6 +42,8 @@ public class ProductDetailServiceImpl implements ProductDetailService {
     public ProductDetail save(ProductDetail productDetail) {
         if (StringUtils.isEmpty(productDetail.getId())) {
             productDetail.setId(UUID.randomUUID().toString());
+            productDetail.setGmtCreated(LocalDateTime.now());
+            productDetail.setGmtModified(LocalDateTime.now());
             productDetailDAO.insert(new ProductDetailDO(productDetail));
 
             return productDetail;

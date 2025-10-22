@@ -10,6 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -23,8 +24,12 @@ public class ProductServiceImpl implements ProductService {
     public int save(Product product) {
           if (StringUtils.isBlank(product.getId())){
               product.setId(UUID.randomUUID().toString());
+              product.setGmtCreated(LocalDateTime.now());
+              product.setGmtModified(LocalDateTime.now());
               return productDAO.save(new ProductDO(product));
           }
+          product.setGmtCreated(LocalDateTime.now());
+          product.setGmtModified(LocalDateTime.now());
         return productDAO.save(new ProductDO(product));
     }
 
