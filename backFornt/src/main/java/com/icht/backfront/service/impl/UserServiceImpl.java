@@ -148,7 +148,7 @@ public class UserServiceImpl implements UserService {
         }
         userDO.setPassword(password);
         result.setMessage("验证成功");
-        userDO.setGmtModified(LocalDateTime.now());
+        userDO.setNumber(number);
         userDAO.update(userDO);
         result.setData(userDO.ToMode());
         return  result;

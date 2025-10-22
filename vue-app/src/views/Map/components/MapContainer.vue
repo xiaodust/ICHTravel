@@ -1,9 +1,14 @@
 <template>
   <div class="map-wrapper">
-    <header class="map-header">
-      <div class="map-header-content">
-        <h1 class="map-title">江苏非遗文化地图</h1>
-        <p class="map-subtitle">云锦 · 昆曲 · 苏绣 · 灯会 · 评弹</p>
+      <header class="map-header">
+        <button @click="goToHome" class="home-btn">
+          ← 返回主页
+        </button>
+        <div class="map-header-content">
+          <div style="margin-bottom: 10px;">
+            <h1 class="map-title">江苏非遗文化地图</h1>
+          </div>
+          <p class="map-subtitle">云锦 · 昆曲 · 苏绣 · 灯会 · 评弹</p>
         <div class="heritage-badges">
           <span class="badge badge-craft">传统技艺</span>
           <span class="badge badge-art">民间艺术</span>
@@ -94,12 +99,19 @@
 
 <script setup>
 import { onMounted, ref, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 
 // 状态管理
 const mapInstance = ref(null)
 const loading = ref(true)
 const loadError = ref(null)
 const geolocationInstance = ref(null)
+const router = useRouter()
+
+// 返回主页
+const goToHome = () => {
+  router.push('/')
+}
 
 // 图层相关
 const layers = [
@@ -617,6 +629,30 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* 返回主页按钮样式 - 清晰可见且位于页面右上角 */
+.home-btn {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  padding: 8px 16px;
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #333;
+  border: 1px solid #999;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  transition: all 0.2s ease;
+  z-index: 100;
+}
+
+.home-btn:hover {
+  background-color: #fff;
+  border-color: #666;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+}
+
 /* 基础重置与全局样式 */
 .map-wrapper {
   width: 100%;

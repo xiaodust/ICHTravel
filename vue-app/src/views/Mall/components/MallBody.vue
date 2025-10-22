@@ -1,4 +1,4 @@
-<template>
+  <template>
   <div class="product-page">
     <!-- 引入导航栏组件 -->
     <!-- <MallHead /> -->
