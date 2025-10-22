@@ -1,4 +1,4 @@
-<template>
+  <template>
   <div class="product-page">
     <!-- 1. 商品图片轮播图区域 -->
     <section class="carousel-section">

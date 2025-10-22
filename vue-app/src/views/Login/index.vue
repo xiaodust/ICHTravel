@@ -60,7 +60,7 @@
             v-model.trim="accountForm.password"
           >
         </div>
-        <button type="submit" class="login-btn" @click="doLogin">登录</button>
+        <button type="button" class="login-btn" @click="handleAccountLogin">登录</button>
         <div class="extra-options">
           <label>
             <input 
@@ -103,7 +103,7 @@
             {{ codeBtnText }}
           </button>
         </div>
-        <button type="submit" class="login-btn" @click="doLogin">登录</button>
+        <button type="button" class="login-btn" @click="handlePhoneLogin">登录</button>
       </form>
 
       <!-- 注册表单 -->
@@ -182,22 +182,9 @@ const handleForgotPassword = () => {
   }, 100);
 };
 
-// 实现doLogin方法
+// 实现doLogin方法 - 调用handleAccountLogin来处理登录
 const doLogin = () => {
-  // 1. 这里可以添加登录验证逻辑
-  // 例如验证用户名密码是否正确
-  const isValid = true; // 假设验证通过
-  
-  if (isValid) {
-    // 2. 登录成功后跳转到主页面
-    router.push('/home');
-    
-    // 或者使用完整写法
-    // router.push({ path: '/' });
-  } else {
-    // 登录失败处理
-    alert('用户名或密码错误');
-  }
+  handleAccountLogin();
 };
 // 1. 响应式状态管理
 // 当前激活的选项卡（默认：账号密码登录）
@@ -284,7 +271,7 @@ const getVerificationCode = () => {
 
 // 3. 表单提交验证（与原JS逻辑一致）
 // 账号密码登录提交
-const handleAccountLogin = () => {
+const handleAccountLogin = async () => {
   const { username, password } = accountForm.value;
   
   if (!username) {
@@ -296,9 +283,40 @@ const handleAccountLogin = () => {
     return;
   }
 
-  // 模拟登录成功（实际项目中替换为接口请求）
-  alert('登录成功！');
-  // 登录成功后可跳转（如：window.location.href = '/home'）
+  try {
+    // 调用后端登录API - 直接指向后端8080端口
+    const response = await axios.get('http://localhost:8080/api/user/login', {
+      params: {
+        name: username, // 后端API参数名是name
+        password: password // 后端API参数名是password
+      },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+    
+    // 处理响应
+    if (response.data && response.data.success) {
+      // 登录成功
+      // 保存用户信息到localStorage，方便首页显示
+      const userData = {
+        name: username, // 用户名
+        avatar: 'https://q8.itc.cn/q_70/images03/20250304/f5873423f8b044d78aa8cf036bc132e0.jpeg' // 默认头像
+      };
+      localStorage.setItem('userInfo', JSON.stringify(userData));
+      
+      alert('登录成功！');
+      // 登录成功后跳转到主页面
+      router.push('/home');
+    } else {
+      // 登录失败，显示错误信息
+      alert(response.data.message || '登录失败，请检查账号密码');
+    }
+  } catch (error) {
+    // 错误处理
+    console.error('登录请求出错：', error);
+    alert(error.response?.data?.message || '网络错误，请检查您的连接');
+  }
 };
 
 // 手机验证登录提交
@@ -365,6 +383,13 @@ const handleRegister = async () => {
     // 处理响应 - 根据Result<User>的结构
     if (response.data && response.data.success) {
       // 注册成功
+      // 保存用户信息到localStorage，这样用户可以直接登录
+      const userData = {
+        name: username, // 用户名
+        avatar: 'https://q8.itc.cn/q_70/images03/20250304/f5873423f8b044d78aa8cf036bc132e0.jpeg' // 默认头像
+      };
+      localStorage.setItem('userInfo', JSON.stringify(userData));
+      
       alert('注册成功！');
       // 注册成功后自动切换到账号登录
       switchTab('account');
