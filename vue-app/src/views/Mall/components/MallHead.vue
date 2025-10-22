@@ -6,7 +6,7 @@
     :style="isFixed ? fixedNavStyle : {}"
   >
     <!-- 顶部快捷导航 -->
-    <div class="top-nav">
+    <!-- <div class="top-nav">
       <div class="container">
         <div class="top-nav-left">
           <a href="#" class="top-nav-link" @click.prevent="$router.push('/home')">返回首页</a>
@@ -15,7 +15,7 @@
           <a href="#" class="top-nav-link">联系客服</a>
         </div>
       </div>
-    </div>
+    </div> -->
 
     <!-- 主导航 -->
     <div class="main-nav">
@@ -170,7 +170,6 @@ ul {
 /* 主导航 */
 .main-nav {
   background-color: #fff;
-  border-bottom: 2px solid #1E90FF;
   padding: 15px 0;
 }
 
