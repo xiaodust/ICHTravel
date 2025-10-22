@@ -2,16 +2,6 @@
   <header class="header">
     <div class="logo">点苏记</div>
     
-    <!-- 搜索框 -->
-    <div class="search-container">
-      <input 
-        type="text" 
-        placeholder="搜索非遗商品/路线"
-        class="search-input"
-      >
-      <button class="search-btn">搜索</button>
-    </div>
-    
     <!-- 用户操作区 -->
     <div class="user-actions">
       <!-- <button class="notify-btn" title="消息通知">
@@ -53,39 +43,6 @@ const handleBack = () => {
   font-size: 24px;
   font-weight: bold;
   color: #1E90FF;
-}
-
-.search-container {
-  display: flex;
-  flex: 1;
-  max-width: 400px;
-  margin: 0 20px;
-}
-
-.search-input {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-right: none;
-  border-radius: 4px 0 0 4px;
-  outline: none;
-}
-
-.search-input:focus {
-  border-color: #1E90FF;
-}
-
-.search-btn {
-  padding: 0 16px;
-  background-color: #1E90FF;
-  color: white;
-  border: none;
-  border-radius: 0 4px 4px 0;
-  cursor: pointer;
-}
-
-.search-btn:hover {
-  background-color: #187bcd;
 }
 
 .user-actions {
@@ -150,13 +107,6 @@ const handleBack = () => {
 }
 
 /* 响应式样式 */
-@media (max-width: 768px) {
-  .search-container {
-    max-width: none;
-    margin: 0 10px;
-  }
-}
-
 @media (max-width: 480px) {
   .header {
     padding: 0 10px;
@@ -164,10 +114,6 @@ const handleBack = () => {
   
   .logo {
     font-size: 18px;
-  }
-  
-  .search-container {
-    display: none;
   }
 }
 </style>
