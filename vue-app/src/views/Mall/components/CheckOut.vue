@@ -130,6 +130,50 @@
           </div>
         </div>
 
+
+        <div class="card address-card">
+          <div class="card-header">
+            <h3 class="card-title">收货地址</h3>
+          </div>
+          <div class="address-form">
+            <div class="address-item">
+              <label class="address-label">收货人</label>
+              <input 
+                v-model="receiver.name" 
+                placeholder="请填写收货人姓名"
+                class="address-input"
+              >
+            </div>
+            <div class="address-item">
+              <label class="address-label">联系电话</label>
+              <input 
+                v-model="receiver.phone" 
+                placeholder="请填写联系电话"
+                class="address-input"
+                maxlength="11"
+              >
+            </div>
+            <div class="address-item">
+              <label class="address-label">详细地址</label>
+              <div class="address-input-group">
+                <input 
+                  v-model="receiver.address" 
+                  placeholder="请填写详细地址"
+                  class="address-input w-full"
+                >
+                <button 
+                  class="btn btn-outline locate-btn" 
+                  @click="getCurrentLocation"
+                  :disabled="isLocating"
+                >
+                  <span v-if="!isLocating">获取当前地址</span>
+                  <span v-if="isLocating" class="loading-spinner"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 支付金额卡片 -->
         <div class="card payment-amount-card">
           <div class="amount-item">
@@ -241,6 +285,114 @@
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+const receiver = reactive({
+  name: '',
+  phone: '',
+  address: ''
+});
+
+// 新增：定位状态管理
+const isLocating = ref(false);
+let geolocation = null;
+let geocoder = null;
+
+// 原有订单数据和状态管理不变
+
+// ...其他原有状态
+
+// 新增：初始化高德地图工具
+onMounted(() => {
+  initCountdown();
+  
+  // 初始化定位和地理编码工具
+  if (window.AMap) {
+    // 初始化地理编码（经纬度转地址）
+    geocoder = new AMap.Geocoder({
+      city: '全国',
+      radius: 1000
+    });
+  } else {
+    console.warn('https://webapi.amap.com/loader.js?v=2.0&key=0035e805721abb4c2e32fe392aa9f290');
+  }
+});
+
+// 新增：获取当前位置并解析为地址
+const getCurrentLocation = () => {
+  if (!window.AMap) {
+    showTip('地图服务加载失败，请稍后重试');
+    return;
+  }
+
+  isLocating.value = true;
+  showTip('正在获取您的位置...', false);
+
+  // 销毁之前的定位实例
+  if (geolocation) {
+    geolocation.destroy();
+  }
+
+  // 创建定位实例
+  geolocation = new AMap.Geolocation({
+    enableHighAccuracy: true, // 高精度定位
+    timeout: 10000, // 超时时间
+    maximumAge: 0, // 不使用缓存
+    showButton: false, // 不显示默认定位按钮
+    panToLocation: false, // 定位成功后不自动移动地图
+    zoomToAccuracy: false // 不调整地图视野
+  });
+
+  // 绑定定位事件
+  geolocation.getCurrentPosition((status, result) => {
+    isLocating.value = false;
+    closeTipModal();
+
+    if (status === 'complete') {
+      // 定位成功，解析地址
+      const { lng, lat } = result.position;
+      geocoder.getAddress([lng, lat], (geoStatus, geoResult) => {
+        if (geoStatus === 'complete' && geoResult.regeocode) {
+          receiver.address = geoResult.regeocode.formattedAddress;
+          showTip('地址获取成功');
+        } else {
+          showTip('地址解析失败，请手动输入');
+        }
+      });
+    } else {
+      // 定位失败处理
+      switch (status) {
+        case 'error':
+          showTip('定位错误，请检查设备定位功能');
+          break;
+        case 'timeout':
+          showTip('定位超时，请重试');
+          break;
+        case 'noPermission':
+          showTip('请允许定位权限后重试');
+          break;
+        default:
+          showTip('定位失败，请手动输入地址');
+      }
+    }
+  });
+};
+
+// 新增：提示工具函数
+const showTip = (content, autoClose = true) => {
+  tipContent.value = content;
+  showTipModal.value = true;
+  
+  if (autoClose) {
+    clearTimeout(tipTimer);
+    tipTimer = setTimeout(closeTipModal, 2000);
+  }
+};
+let tipTimer = null;
+
+onUnmounted(() => {
+  if (countdownTimer) clearInterval(countdownTimer);
+  if (tipTimer) clearTimeout(tipTimer);
+  if (geolocation) geolocation.destroy(); // 销毁定位实例
+});
 
 const router = useRouter();
 const route = useRoute();
@@ -373,6 +525,82 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.address-card {
+  background-color: white;
+  margin-bottom: 20px;
+}
+
+.address-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.address-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.address-label {
+  width: 80px;
+  font-size: 14px;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.address-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.address-input:focus {
+  border-color: #1E90FF;
+}
+
+.address-input-group {
+  flex: 1;
+  display: flex;
+  gap: 10px;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.locate-btn {
+  white-space: nowrap;
+  padding: 0 16px;
+  min-width: 120px;
+}
+
+/* 适配响应式 */
+@media (max-width: 768px) {
+  .address-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .address-label {
+    width: auto;
+  }
+  
+  .address-input-group {
+    width: 100%;
+    flex-direction: column;
+  }
+  
+  .locate-btn {
+    width: 100%;
+    padding: 10px 0;
+  }
+}
 /* 基础样式复用原项目风格 */
 .app-container {
   min-height: 100vh;
