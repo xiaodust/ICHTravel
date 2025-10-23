@@ -12,6 +12,7 @@ import BrowsingHistory from "../views/user/BrowsingHistory.vue";
 import Settings from "../views/user/Settings.vue";
 import Medals from "../views/user/Medals.vue";
 import AMapLoader from '@amap/amap-jsapi-loader';
+import Person from "../views/Commit/person.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -19,6 +20,10 @@ const router = createRouter({
     {
       path: "/",
       component: Home,
+    },
+    {
+      path: "/person",
+      component: Person
     },
     {
       path: "/home",
