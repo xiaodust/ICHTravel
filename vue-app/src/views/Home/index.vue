@@ -44,7 +44,7 @@
 
     <!-- 顶部Banner -->
     <div class="banner">
-      <img src="/image/微信图片_20251010141521_51_4.jpg" alt="江苏非遗Banner">
+      <img src="/image/Person页面背景图.jpg" alt="江苏非遗Banner">
       <div class="banner-text">
         <h1>点苏记 · 江苏非遗</h1>
         <p>探索13市非遗瑰宝，定制专属文化之旅</p>

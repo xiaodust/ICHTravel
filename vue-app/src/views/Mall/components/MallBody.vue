@@ -173,8 +173,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
+import axios from 'axios';
 
 const router = useRouter();
 
@@ -359,20 +360,54 @@ const generateRandomProducts = (count) => {
   return randomProducts;
 };
 
-// 初始化商品数据
+// 初始化商品数据（改为从后端分页接口获取）
 const initProducts = () => {
-  const initialProducts = [...foodProducts.value, ...craftProducts.value];
-  const extraProducts = generateRandomProducts(85);
-  allProducts.value = [...initialProducts, ...extraProducts];
-  totalProducts.value = allProducts.value.length;
-  totalPages.value = Math.ceil(totalProducts.value / pageSize.value);
+  fetchProducts(1);
 };
 
-// 获取当前页商品
+// 从后端获取分页商品数据
+const fetchProducts = async (page = currentPage.value) => {
+  try {
+    isLoading.value = true;
+    const res = await axios.get('http://localhost:8080/api/product/page', {
+      params: { pagination: page - 1, pageSize: pageSize.value }
+    });
+    const result = res.data || {};
+    const ok = result.isSuccess === true || result.success === true;
+    const paging = ok ? result.data : null;
+    const list = Array.isArray(paging?.data) ? paging.data : [];
+    allProducts.value = list.map(p => ({
+      id: p.id,
+      name: p.name,
+      imgUrl: p.productImg || 'https://picsum.photos/300/300?random=product',
+      tag: '',
+      rate: 5,
+      rateCount: p.purchaseNum || 0,
+      currentPrice: p.price || 0,
+      originalPrice: p.price ? Number((p.price * 1.2).toFixed(2)) : 0
+    }));
+    totalProducts.value = paging?.totalCount ?? list.length;
+    totalPages.value = paging?.totalPage ?? Math.ceil(totalProducts.value / pageSize.value);
+    currentPage.value = page;
+  } catch (e) {
+    console.error('加载商品分页失败:', e);
+    // 后端不可用时退回到本地数据
+    if (typeof generateRandomProducts === 'function') {
+      const initialProducts = [...(foodProducts?.value || []), ...(craftProducts?.value || [])];
+      const extraProducts = generateRandomProducts(85);
+      allProducts.value = [...initialProducts, ...extraProducts];
+      totalProducts.value = allProducts.value.length;
+      totalPages.value = Math.ceil(totalProducts.value / pageSize.value);
+      currentPage.value = 1;
+    }
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// 获取当前页商品（后端已分页，直接返回当前页数据）
 const currentPageProducts = computed(() => {
-  const startIndex = (currentPage.value - 1) * pageSize.value;
-  const endIndex = startIndex + pageSize.value;
-  return allProducts.value.slice(startIndex, endIndex);
+  return allProducts.value;
 });
 
 // 分页显示逻辑
@@ -419,18 +454,16 @@ const showLastEllipsis = computed(() => {
   return totalPages.value > 5 && currentPage.value < totalPages.value - 2;
 });
 
-// 切换页码
+// 切换页码（改为触发后端请求）
 const changePage = (pageNum) => {
   if (pageNum < 1 || pageNum > totalPages.value || pageNum === currentPage.value || isLoading.value) {
     return;
   }
-  
-  isLoading.value = true;
-  setTimeout(() => {
-    currentPage.value = pageNum;
-    document.querySelector('.product-grid').scrollIntoView({ behavior: 'smooth' });
-    isLoading.value = false;
-  }, 500);
+  fetchProducts(pageNum);
+  nextTick(() => {
+    const grid = document.querySelector('.product-grid');
+    if (grid) grid.scrollIntoView({ behavior: 'smooth' });
+  });
 };
 
 // 处理排序
@@ -460,9 +493,52 @@ const handleSort = () => {
 };
 
 // 加入购物车
-const addToCart = (product) => {
-  console.log('加入购物车:', product);
-  alert(`${product.name} 已加入购物车`);
+const addToCart = async (product) => {
+  try {
+    const apiBase = 'http://localhost:8080';
+    // 从登录态获取用户ID作为购物车ID（不再使用 demo-user）
+    const getUserId = () => {
+      const sid = sessionStorage.getItem('userId');
+      if (sid) return sid;
+      try {
+        const ui = localStorage.getItem('userInfo');
+        if (ui) {
+          const parsed = JSON.parse(ui);
+          if (parsed && parsed.id) return parsed.id;
+        }
+      } catch (_) {}
+      return null;
+    };
+    const cartId = getUserId();
+    if (!cartId) {
+      alert('请先登录后再添加到购物车');
+      return;
+    }
+    const resolveImg = (url) => {
+      if (!url) return '';
+      if (url.startsWith('/static')) return apiBase + url.replace('/static', '');
+      if (url.startsWith('/uploads')) return apiBase + url;
+      return url;
+    };
+    const id = window.crypto?.randomUUID?.() || ('ci-' + Date.now() + '-' + Math.floor(Math.random()*1e6));
+    const body = {
+      id,
+      cartId,
+      productId: product.id,
+      productName: product.name,
+      productPrice: product.currentPrice,
+      productImage: resolveImg(product.imgUrl),
+      number: 1,
+      totalPrice: Number((product.currentPrice * 1).toFixed(2))
+    };
+    const res = await axios.post(`${apiBase}/api/cart/add`, body);
+    const result = res.data || {};
+    // 以HTTP 2xx返回视为成功，避免误判
+    alert(`${product.name} 已加入购物车`);
+  } catch (e) {
+    console.error('加入购物车接口失败:', e);
+    alert('加入购物车失败，请稍后重试');
+  }
 };
 
 // 跳转到商品详情页（路由格式：heritage-mall/{id}）
@@ -497,7 +573,7 @@ const goToSlide = (index) => {
 
 onMounted(() => {
   startCarousel();
-  initProducts();
+  fetchProducts(1);
 });
 
 onUnmounted(() => {

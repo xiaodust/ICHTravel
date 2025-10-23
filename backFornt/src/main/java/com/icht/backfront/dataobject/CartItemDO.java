@@ -116,8 +116,10 @@ public class CartItemDO {
 
     public CartItem ToModel() {
         CartItem cartItem = new CartItem();
+        cartItem.setId(this.id);
         cartItem.setCartId(this.cartId);
         cartItem.setProductId(this.productId);
+        cartItem.setNumber(this.number);
         cartItem.setProductName(this.productName);
         cartItem.setProductPrice(this.productPrice);
         cartItem.setTotalPrice(this.totalPrice);
