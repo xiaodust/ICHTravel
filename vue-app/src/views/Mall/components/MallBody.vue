@@ -1,4 +1,4 @@
-  <template>
+<template>
   <div class="product-page">
     <!-- 1. 商品图片轮播图区域 -->
     <section class="carousel-section">
@@ -18,7 +18,6 @@
                 <div class="carousel-caption">
                   <h3>优选美食专场</h3>
                   <p>源自大自然的馈赠，品味地道风味</p>
-                  <button class="carousel-btn-shop" @click="$router.push('/food')">立即选购</button>
                 </div>
               </div>
               <div class="carousel-slide">
@@ -30,7 +29,6 @@
                 <div class="carousel-caption">
                   <h3>手工工艺品特惠</h3>
                   <p>匠心之作，传承文化之美</p>
-                  <button class="carousel-btn-shop" @click="$router.push('/craft')">探索工艺</button>
                 </div>
               </div>
               <div class="carousel-slide">
@@ -68,130 +66,106 @@
       </div>
     </section>
 
-    <!-- 2. 特色分类区域 -->
-    <section class="categories-section">
-      <div class="container">
-        <div class="category-items">
-          <a href="#" @click.prevent="$router.push('/food')" class="category-item">
-            <div class="category-icon">🍽️</div>
-            <div class="category-name">美味食品</div>
-          </a>
-          <a href="#" @click.prevent="$router.push('/craft')" class="category-item">
-            <div class="category-icon">🎨</div>
-            <div class="category-name">精品工艺</div>
-          </a>
-          <a href="#" @click.prevent="$router.push('/food')" class="category-item" >
-            <div class="category-icon">🎁</div>
-            <div class="category-name">礼品套装</div>
-          </a>
-          <a href="#" @click.prevent="$router.push('/craft')" class="category-item">
-            <div class="category-icon">🔥</div>
-            <div class="category-name">热销榜单</div>
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <!-- 3. 美味食品专区 -->
-    <section class="product-section food-section">
+    <!-- 2. 全部商品专区（分页查询） -->
+    <section class="product-section all-products-section">
       <div class="container">
         <div class="section-header">
           <h2 class="section-title">
-            <i class="title-icon">🍽️</i> 美味食品专区
+            <i class="title-icon">📦</i> 全部商品
           </h2>
-          <a href="#" class="more-link" @click="$router.push('/food')">查看全部 <span>→</span></a>
+          <div class="sort-container">
+            <select class="sort-select" v-model="sortType" @change="handleSort">
+              <option value="default">默认排序</option>
+              <option value="price-asc">价格从低到高</option>
+              <option value="price-desc">价格从高到低</option>
+              <option value="hot">热销优先</option>
+              <option value="new">新品优先</option>
+            </select>
+          </div>
         </div>
 
-        <!-- 横向滚动容器 -->
-        <div class="horizontal-scroll-container">
-          <div class="scroll-content">
-            <div class="product-grid">
-              <div class="product-card" v-for="(item, index) in foodProducts" :key="index">
-                <div class="card-img-container">
-                  <img 
-                    :src="item.imgUrl" 
-                    :alt="item.name" 
-                    class="product-img"
-                  >
-                  <div class="card-tag hot-tag" v-if="item.tag === 'hot'">热销</div>
-                  <div class="card-tag new-tag" v-if="item.tag === 'new'">新品</div>
-                </div>
-                <div class="card-content">
-                  <h3 class="product-name">{{ item.name }}</h3>
-                  <div class="product-rating">
-                    <span class="star active" v-for="star in item.rate" :key="star">★</span>
-                    <span class="star" v-for="star in (5 - item.rate)" :key="star + 10">★</span>
-                    <span class="rating-count">({{ item.rateCount }})</span>
-                  </div>
-                  <div class="product-price">
-                    <span class="current-price">¥{{ item.currentPrice }}</span>
-                    <span class="original-price">¥{{ item.originalPrice }}</span>
-                  </div>
-                  <button class="add-cart-btn" @click="addToCart(item)">加入购物车</button>
-                </div>
+        <!-- 商品网格布局（分页展示）- 点击卡片跳转详情页 -->
+        <div class="product-grid">
+          <div 
+            class="product-card" 
+            v-for="(item, index) in currentPageProducts" 
+            :key="item.id"
+            @click="goToProductDetail(item.id)"
+            style="cursor: pointer;"
+          >
+            <div class="card-img-container">
+              <img 
+                :src="item.imgUrl" 
+                :alt="item.name" 
+                class="product-img"
+              >
+              <div class="card-tag hot-tag" v-if="item.tag === 'hot'">热销</div>
+              <div class="card-tag new-tag" v-if="item.tag === 'new'">新品</div>
+            </div>
+            <div class="card-content">
+              <h3 class="product-name">{{ item.name }}</h3>
+              <div class="product-rating">
+                <span class="star active" v-for="star in item.rate" :key="star">★</span>
+                <span class="star" v-for="star in (5 - item.rate)" :key="star + 10">★</span>
+                <span class="rating-count">({{ item.rateCount }})</span>
               </div>
+              <div class="product-price">
+                <span class="current-price">¥{{ item.currentPrice }}</span>
+                <span class="original-price">¥{{ item.originalPrice }}</span>
+              </div>
+              <button class="add-cart-btn" @click.stop="addToCart(item)">加入购物车</button>
             </div>
           </div>
-          
-          <!-- 滚动控制按钮 -->
-          <button class="scroll-btn left-btn" @click="scrollLeft('food')" aria-label="向左滚动">
-            <span class="btn-icon">←</span>
-          </button>
-          <button class="scroll-btn right-btn" @click="scrollRight('food')" aria-label="向右滚动">
-            <span class="btn-icon">→</span>
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- 4. 精品工艺专区 -->
-    <section class="product-section craft-section">
-      <div class="container">
-        <div class="section-header">
-          <h2 class="section-title">
-            <i class="title-icon">🎨</i> 精品工艺专区
-          </h2>
-          <a href="#" class="more-link" @click="$router.push('/craft')">查看全部 <span>→</span></a>
         </div>
 
-        <!-- 横向滚动容器 -->
-        <div class="horizontal-scroll-container">
-          <div class="scroll-content">
-            <div class="product-grid">
-              <div class="product-card" v-for="(item, index) in craftProducts" :key="index">
-                <div class="card-img-container">
-                  <img 
-                    :src="item.imgUrl" 
-                    :alt="item.name" 
-                    class="product-img"
-                  >
-                  <div class="card-tag hot-tag" v-if="item.tag === 'hot'">热销</div>
-                  <div class="card-tag new-tag" v-if="item.tag === 'new'">新品</div>
-                </div>
-                <div class="card-content">
-                  <h3 class="product-name">{{ item.name }}</h3>
-                  <div class="product-rating">
-                    <span class="star active" v-for="star in item.rate" :key="star">★</span>
-                    <span class="star" v-for="star in (5 - item.rate)" :key="star + 10">★</span>
-                    <span class="rating-count">({{ item.rateCount }})</span>
-                  </div>
-                  <div class="product-price">
-                    <span class="current-price">¥{{ item.currentPrice }}</span>
-                    <span class="original-price">¥{{ item.originalPrice }}</span>
-                  </div>
-                  <button class="add-cart-btn" @click="addToCart(item)">加入购物车</button>
-                </div>
-              </div>
-            </div>
+        <!-- 加载状态提示 -->
+        <div class="loading-container" v-if="isLoading">
+          <div class="spinner"></div>
+          <p class="loading-text">加载中...</p>
+        </div>
+
+        <!-- 分页控件 -->
+        <div class="pagination-container" v-if="!isLoading && totalProducts > 0">
+          <div class="pagination-info">
+            共 {{ totalProducts }} 件商品，当前第 {{ currentPage }} / {{ totalPages }} 页
           </div>
-          
-          <!-- 滚动控制按钮 -->
-          <button class="scroll-btn left-btn" @click="scrollLeft('craft')" aria-label="向左滚动">
-            <span class="btn-icon">←</span>
-          </button>
-          <button class="scroll-btn right-btn" @click="scrollRight('craft')" aria-label="向右滚动">
-            <span class="btn-icon">→</span>
-          </button>
+          <div class="pagination-controls">
+            <button 
+              class="page-btn prev-page" 
+              @click="changePage(currentPage - 1)"
+              :disabled="currentPage === 1 || isLoading"
+            >
+              上一页
+            </button>
+            
+            <div class="page-numbers">
+              <button 
+                class="page-number" 
+                v-for="pageNum in visiblePageNumbers" 
+                :key="pageNum"
+                @click="changePage(pageNum)"
+                :class="{ active: pageNum === currentPage }"
+              >
+                {{ pageNum }}
+              </button>
+              
+              <span class="page-ellipsis" v-if="showFirstEllipsis">...</span>
+              <span class="page-ellipsis" v-if="showLastEllipsis">...</span>
+            </div>
+            
+            <button 
+              class="page-btn next-page" 
+              @click="changePage(currentPage + 1)"
+              :disabled="currentPage === totalPages || isLoading"
+            >
+              下一页
+            </button>
+          </div>
+        </div>
+
+        <!-- 无商品提示 -->
+        <div class="no-products-container" v-if="!isLoading && totalProducts === 0">
+          <p class="no-products-text">暂无商品数据</p>
         </div>
       </div>
     </section>
@@ -199,113 +173,302 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
+
+// 轮播图相关
 const currentSlide = ref(0);
 const slideCount = 3;
 let carouselInterval = null;
-const scrollContainers = ref({
-  food: null,
-  craft: null
-});
 
-// 食品商品数据
+// 分页相关配置
+const currentPage = ref(1);
+const pageSize = ref(9);
+const totalProducts = ref(0);
+const totalPages = ref(0);
+const isLoading = ref(false);
+const sortType = ref('default');
+
+// 商品数据（带唯一ID）
+const allProducts = ref([]);
 const foodProducts = ref([
   {
+    id: 'product-1001',
     name: '农家手工腊肠 500g',
     imgUrl: 'https://picsum.photos/id/292/300/300',
     tag: 'hot',
     rate: 4,
     rateCount: 128,
     currentPrice: 59.9,
-    originalPrice: 89.0
+    originalPrice: 89.0,
+    type: 'food'
   },
   {
+    id: 'product-1002',
     name: '东北有机五常大米 5kg',
     imgUrl: 'https://picsum.photos/id/139/300/300',
     tag: '',
     rate: 5,
     rateCount: 256,
     currentPrice: 89.0,
-    originalPrice: 109.0
+    originalPrice: 109.0,
+    type: 'food'
   },
   {
+    id: 'product-1003',
     name: '秦岭土蜂蜜 500g',
     imgUrl: 'https://picsum.photos/id/175/300/300',
     tag: 'new',
     rate: 4,
     rateCount: 64,
     currentPrice: 129.0,
-    originalPrice: 159.0
+    originalPrice: 159.0,
+    type: 'food'
   },
   {
+    id: 'product-1004',
     name: '无添加手工曲奇饼干 200g',
     imgUrl: 'https://picsum.photos/id/225/300/300',
     tag: '',
     rate: 4,
     rateCount: 98,
     currentPrice: 39.9,
-    originalPrice: 59.0
+    originalPrice: 59.0,
+    type: 'food'
   },
   {
+    id: 'product-1005',
     name: '新疆和田骏枣 1kg',
     imgUrl: 'https://picsum.photos/id/132/300/300',
     tag: 'hot',
     rate: 5,
     rateCount: 215,
     currentPrice: 69.0,
-    originalPrice: 89.0
+    originalPrice: 89.0,
+    type: 'food'
   }
 ]);
 
-// 工艺品数据
 const craftProducts = ref([
   {
+    id: 'product-2001',
     name: '景德镇手工陶瓷花瓶',
     imgUrl: 'https://picsum.photos/id/118/300/300',
     tag: 'hot',
     rate: 4,
     rateCount: 156,
     currentPrice: 299.0,
-    originalPrice: 399.0
+    originalPrice: 399.0,
+    type: 'craft'
   },
   {
+    id: 'product-2002',
     name: '海南黄花梨手串 18mm',
     imgUrl: 'https://picsum.photos/id/177/300/300',
     tag: '',
     rate: 5,
     rateCount: 89,
     currentPrice: 599.0,
-    originalPrice: 799.0
+    originalPrice: 799.0,
+    type: 'craft'
   },
   {
+    id: 'product-2003',
     name: '苏绣手帕 牡丹图',
     imgUrl: 'https://picsum.photos/id/218/300/300',
     tag: 'new',
     rate: 5,
     rateCount: 42,
     currentPrice: 159.0,
-    originalPrice: 199.0
+    originalPrice: 199.0,
+    type: 'craft'
   },
   {
+    id: 'product-2004',
     name: '宜兴紫砂壶 西施壶',
     imgUrl: 'https://picsum.photos/id/30/300/300',
     tag: '',
     rate: 4,
     rateCount: 76,
     currentPrice: 699.0,
-    originalPrice: 899.0
+    originalPrice: 899.0,
+    type: 'craft'
   },
   {
+    id: 'product-2005',
     name: '手工木雕摆件 松鹤延年',
     imgUrl: 'https://picsum.photos/id/129/300/300',
     tag: 'hot',
     rate: 5,
     rateCount: 108,
     currentPrice: 899.0,
-    originalPrice: 1299.0
+    originalPrice: 1299.0,
+    type: 'craft'
   }
 ]);
+
+// 生成随机商品数据（带唯一ID）
+const generateRandomProducts = (count) => {
+  const productTypes = ['food', 'craft'];
+  const tags = ['', 'hot', 'new'];
+  const foodNames = [
+    '手工牛肉干 200g', '云南过桥米线 5包装', '古法红糖 300g', 
+    '手工酸辣粉 6桶装', '新疆葡萄干 500g', '农家土鸡蛋 30枚',
+    '手工挂面 1kg', '东北黑木耳 250g', '野生香菇 100g', '蜂蜜柚子茶 500ml'
+  ];
+  const craftNames = [
+    '手工编织竹篮', '青花瓷茶杯套装', '木雕茶盘', '手工蜡染布',
+    '紫砂茶叶罐', '手工银饰吊坠', '刺绣钱包', '竹制书签',
+    '手工纸灯笼', '陶瓷香薰炉'
+  ];
+
+  const randomProducts = [];
+  let idCounter = 3001;
+  for (let i = 0; i < count; i++) {
+    const type = productTypes[Math.floor(Math.random() * productTypes.length)];
+    const tag = tags[Math.floor(Math.random() * tags.length)];
+    const rate = Math.floor(Math.random() * 3) + 3;
+    const rateCount = Math.floor(Math.random() * 300) + 20;
+    const imgId = Math.floor(Math.random() * 500);
+    let name, currentPrice, originalPrice;
+
+    if (type === 'food') {
+      name = foodNames[Math.floor(Math.random() * foodNames.length)];
+      currentPrice = (Math.random() * 100 + 20).toFixed(1);
+      originalPrice = (Math.random() * 50 + parseFloat(currentPrice)).toFixed(1);
+    } else {
+      name = craftNames[Math.floor(Math.random() * craftNames.length)];
+      currentPrice = (Math.random() * 800 + 100).toFixed(1);
+      originalPrice = (Math.random() * 300 + parseFloat(currentPrice)).toFixed(1);
+    }
+
+    randomProducts.push({
+      id: `product-${idCounter++}`,
+      name,
+      imgUrl: `https://picsum.photos/id/${imgId}/300/300`,
+      tag,
+      rate,
+      rateCount,
+      currentPrice: parseFloat(currentPrice),
+      originalPrice: parseFloat(originalPrice),
+      type
+    });
+  }
+  return randomProducts;
+};
+
+// 初始化商品数据
+const initProducts = () => {
+  const initialProducts = [...foodProducts.value, ...craftProducts.value];
+  const extraProducts = generateRandomProducts(85);
+  allProducts.value = [...initialProducts, ...extraProducts];
+  totalProducts.value = allProducts.value.length;
+  totalPages.value = Math.ceil(totalProducts.value / pageSize.value);
+};
+
+// 获取当前页商品
+const currentPageProducts = computed(() => {
+  const startIndex = (currentPage.value - 1) * pageSize.value;
+  const endIndex = startIndex + pageSize.value;
+  return allProducts.value.slice(startIndex, endIndex);
+});
+
+// 分页显示逻辑
+const visiblePageNumbers = computed(() => {
+  const pages = [];
+  const maxVisible = 5;
+  
+  if (totalPages.value <= maxVisible) {
+    for (let i = 1; i <= totalPages.value; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+  
+  if (currentPage.value <= 3) {
+    return [1, 2, 3, 4, 5];
+  }
+  
+  if (currentPage.value >= totalPages.value - 2) {
+    return [
+      totalPages.value - 4,
+      totalPages.value - 3,
+      totalPages.value - 2,
+      totalPages.value - 1,
+      totalPages.value
+    ];
+  }
+  
+  return [
+    currentPage.value - 2,
+    currentPage.value - 1,
+    currentPage.value,
+    currentPage.value + 1,
+    currentPage.value + 2
+  ];
+});
+
+// 是否显示省略号
+const showFirstEllipsis = computed(() => {
+  return totalPages.value > 5 && currentPage.value > 3;
+});
+
+const showLastEllipsis = computed(() => {
+  return totalPages.value > 5 && currentPage.value < totalPages.value - 2;
+});
+
+// 切换页码
+const changePage = (pageNum) => {
+  if (pageNum < 1 || pageNum > totalPages.value || pageNum === currentPage.value || isLoading.value) {
+    return;
+  }
+  
+  isLoading.value = true;
+  setTimeout(() => {
+    currentPage.value = pageNum;
+    document.querySelector('.product-grid').scrollIntoView({ behavior: 'smooth' });
+    isLoading.value = false;
+  }, 500);
+};
+
+// 处理排序
+const handleSort = () => {
+  isLoading.value = true;
+  setTimeout(() => {
+    switch (sortType.value) {
+      case 'price-asc':
+        allProducts.value.sort((a, b) => a.currentPrice - b.currentPrice);
+        break;
+      case 'price-desc':
+        allProducts.value.sort((a, b) => b.currentPrice - a.currentPrice);
+        break;
+      case 'hot':
+        allProducts.value.sort((a, b) => b.rateCount - a.rateCount);
+        break;
+      case 'new':
+        allProducts.value.sort((a, b) => (a.tag === 'new' ? -1 : b.tag === 'new' ? 1 : 0));
+        break;
+      default:
+        initProducts();
+        break;
+    }
+    currentPage.value = 1;
+    isLoading.value = false;
+  }, 500);
+};
+
+// 加入购物车
+const addToCart = (product) => {
+  console.log('加入购物车:', product);
+  alert(`${product.name} 已加入购物车`);
+};
+
+// 跳转到商品详情页（路由格式：heritage-mall/{id}）
+const goToProductDetail = (productId) => {
+  router.push(`/heritage-mall/${productId}`);
+};
 
 // 轮播图控制
 const startCarousel = () => {
@@ -332,33 +495,9 @@ const goToSlide = (index) => {
   currentSlide.value = index;
 };
 
-// 横向滚动控制
-const scrollLeft = (type) => {
-  if (scrollContainers.value[type]) {
-    scrollContainers.value[type].scrollBy({ left: -300, behavior: 'smooth' });
-  }
-};
-
-const scrollRight = (type) => {
-  if (scrollContainers.value[type]) {
-    scrollContainers.value[type].scrollBy({ left: 300, behavior: 'smooth' });
-  }
-};
-
-// 加入购物车
-const addToCart = (product) => {
-  console.log('加入购物车:', product);
-  alert(`${product.name} 已加入购物车`);
-};
-
 onMounted(() => {
   startCarousel();
-  
-  // 获取滚动容器引用
-  nextTick(() => {
-    scrollContainers.value.food = document.querySelector('.food-section .scroll-content');
-    scrollContainers.value.craft = document.querySelector('.craft-section .scroll-content');
-  });
+  initProducts();
 });
 
 onUnmounted(() => {
@@ -531,69 +670,15 @@ a {
   border-radius: 6px;
 }
 
-/* 分类区域 */
-.categories-section {
-  padding: 40px 0;
-  margin: 0 auto 60px;
-  max-width: 1200px;
-  background-color: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.03);
-}
-
-.category-items {
-  display: flex;
-  justify-content: center;
-  gap: 60px;
-  flex-wrap: wrap;
-}
-
-.category-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 25px 20px;
-  border-radius: 12px;
-  transition: all 0.3s;
-  width: 140px;
-  text-align: center;
-}
-
-.category-item:hover {
-  background-color: #f0f7ff;
-  transform: translateY(-8px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.07);
-}
-
-.category-icon {
-  font-size: 50px;
-  margin-bottom: 18px;
-}
-
-.category-name {
-  font-size: 18px;
-  color: #333;
-  font-weight: 500;
-}
-
-/* 商品专区通用样式 */
+/* 全部商品专区样式 */
 .product-section {
   padding: 50px 0;
   margin: 0 auto 40px;
   max-width: 1200px;
-  background-color: white;
+  background-color: #f9f9f9;
   border-radius: 12px;
   box-shadow: 0 2px 15px rgba(0, 0, 0, 0.03);
   position: relative;
-}
-
-/* 区分两个专区的背景色 */
-.food-section {
-  background-color: #fff8f5;
-}
-
-.craft-section {
-  background-color: #f5f8ff;
 }
 
 .section-header {
@@ -628,87 +713,33 @@ a {
   font-size: 32px;
 }
 
-.more-link {
-  color: #1E90FF;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  transition: all 0.3s;
+.sort-container {
+  margin-left: auto;
 }
 
-.more-link span {
-  margin-left: 5px;
-  transition: transform 0.3s;
-}
-
-.more-link:hover {
-  color: #0d84e3;
-}
-
-.more-link:hover span {
-  transform: translateX(3px);
-}
-
-/* 横向滚动容器样式 */
-.horizontal-scroll-container {
-  position: relative;
-  overflow: hidden;
-  padding: 10px 0;
-}
-
-.scroll-content {
-  display: flex;
-  overflow-x: auto;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-  padding: 5px 0;
-  scroll-behavior: smooth;
-}
-
-.scroll-content::-webkit-scrollbar {
-  display: none; /* Chrome, Safari and Opera */
-}
-
-/* 滚动按钮样式 */
-.scroll-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.9);
-  border: none;
-  color: #333;
-  font-size: 20px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s;
-  z-index: 5;
-}
-
-.scroll-btn:hover {
+.sort-select {
+  padding: 8px 15px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
   background-color: white;
-  transform: translateY(-50%) scale(1.1);
-  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.15);
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s;
 }
 
-.left-btn {
-  left: -15px;
+.sort-select:focus {
+  outline: none;
+  border-color: #1E90FF;
+  box-shadow: 0 0 0 2px rgba(30, 144, 255, 0.1);
 }
 
-.right-btn {
-  right: -15px;
-}
-
-/* 商品网格 - 横向排列 */
+/* 商品网格布局 */
 .product-grid {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 25px;
-  width: max-content; /* 让内容撑开容器宽度 */
+  margin-bottom: 40px;
 }
 
 /* 商品卡片 */
@@ -719,7 +750,6 @@ a {
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
   transition: all 0.3s;
   position: relative;
-  min-width: 280px; /* 固定卡片宽度 */
 }
 
 .product-card:hover {
@@ -880,6 +910,132 @@ a {
   transform: rotate(15deg);
 }
 
+/* 分页控件样式 */
+.pagination-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.pagination-info {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.page-btn {
+  padding: 6px 15px;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 14px;
+}
+
+.page-btn:hover:not(:disabled) {
+  background-color: #f0f7ff;
+  border-color: #1E90FF;
+  color: #1E90FF;
+}
+
+.page-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #f5f5f5;
+}
+
+.page-numbers {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.page-number {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  background-color: white;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.page-number:hover:not(.active) {
+  border-color: #1E90FF;
+  color: #1E90FF;
+}
+
+.page-number.active {
+  background-color: #1E90FF;
+  color: white;
+  border-color: #1E90FF;
+}
+
+.page-ellipsis {
+  color: #999;
+  padding: 0 5px;
+}
+
+/* 加载状态样式 */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 0;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #1E90FF;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  color: #666;
+  font-size: 16px;
+}
+
+/* 无商品提示 */
+.no-products-container {
+  display: flex;
+  justify-content: center;
+  padding: 80px 0;
+}
+
+.no-products-text {
+  color: #999;
+  font-size: 16px;
+  padding: 15px 30px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+}
+
 /* 响应式调整 */
 @media (max-width: 1200px) {
   .container {
@@ -896,8 +1052,8 @@ a {
     height: 400px;
   }
   
-  .category-items {
-    gap: 40px;
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -918,16 +1074,13 @@ a {
     font-size: 16px;
   }
   
-  .product-card {
-    min-width: 220px;
+  .section-title {
+    font-size: 24px;
   }
   
-  .category-items {
-    gap: 25px;
-  }
-  
-  .category-item {
-    width: 120px;
+  .page-number {
+    width: 32px;
+    height: 32px;
   }
 }
 
@@ -944,22 +1097,31 @@ a {
     font-size: 24px;
   }
   
-  .carousel-btn, .scroll-btn {
+  .carousel-btn {
     width: 40px;
     height: 40px;
     font-size: 18px;
   }
   
-  .product-card {
-    min-width: 160px;
+  .product-grid {
+    grid-template-columns: 1fr;
   }
   
-  .section-title {
-    font-size: 24px;
+  .card-img-container {
+    height: 180px;
   }
   
-  .category-icon {
-    font-size: 40px;
+  .product-name {
+    font-size: 16px;
+  }
+  
+  .current-price {
+    font-size: 18px;
+  }
+  
+  .pagination-controls {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 }
 </style>
