@@ -127,6 +127,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import axios from 'axios';
 
 // 路由相关
 const route = useRoute();
@@ -164,22 +165,52 @@ const increaseQuantity = () => {
 };
 
 // 加入购物车
-const addToCart = () => {
-  const cartItem = {
-    id: product.value.id,
-    name: product.value.name,
-    price: product.value.currentPrice,
-    image: product.value.imgUrl,
-    quantity: quantity.value,
-    spec: selectedSpec.value || '默认规格'
-  };
-  
-  // 这里可以替换为实际的购物车存储逻辑（如Vuex/Pinia）
-  let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-  cart.push(cartItem);
-  localStorage.setItem('cart', JSON.stringify(cart));
-  
-  alert(`${product.value.name} 已加入购物车，数量：${quantity.value}`);
+const addToCart = async () => {
+  try {
+    const apiBase = 'http://localhost:8080';
+    // 从登录态获取用户ID作为购物车ID（不再使用 demo-user）
+    const getUserId = () => {
+      const sid = sessionStorage.getItem('userId');
+      if (sid) return sid;
+      try {
+        const ui = localStorage.getItem('userInfo');
+        if (ui) {
+          const parsed = JSON.parse(ui);
+          if (parsed && parsed.id) return parsed.id;
+        }
+      } catch (_) {}
+      return null;
+    };
+    const cartId = getUserId();
+    if (!cartId) {
+      alert('请先登录后再添加到购物车');
+      return;
+    }
+    const resolveImg = (url) => {
+      if (!url) return '';
+      if (url.startsWith('/static')) return apiBase + url.replace('/static', '');
+      if (url.startsWith('/uploads')) return apiBase + url;
+      return url;
+    };
+    const id = window.crypto?.randomUUID?.() || ('ci-' + Date.now() + '-' + Math.floor(Math.random()*1e6));
+    const body = {
+      id,
+      cartId,
+      productId: product.value.id,
+      productName: product.value.name,
+      productPrice: product.value.currentPrice,
+      productImage: resolveImg(product.value.imgUrl),
+      number: quantity.value,
+      totalPrice: Number((product.value.currentPrice * quantity.value).toFixed(2))
+    };
+    const res = await axios.post(`${apiBase}/api/cart/add`, body);
+    const result = res.data || {};
+    // 以HTTP 2xx返回视为成功，避免误判
+    alert(`${product.value.name} 已加入购物车，数量：${quantity.value}`);
+  } catch (e) {
+    console.error('加入购物车接口失败:', e);
+    alert('添加购物车失败，请稍后重试');
+  }
 };
 
 // 获取商品详情数据
@@ -187,63 +218,74 @@ const fetchProductDetail = async () => {
   try {
     isLoading.value = true;
     const productId = route.params.id; // 从路由参数获取商品ID
-    
-    // 模拟API请求延迟
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // 这里是模拟数据，实际项目中应替换为真实API请求
-    const mockProducts = {
-      // 农家手工腊肠（product-1001）
-      'product-1001': {
-        id: 'product-1001',
-        name: '农家手工腊肠 500g',
-        imgUrl: 'https://picsum.photos/id/292/600/600',
-        imageList: [
-          'https://picsum.photos/id/292/600/600',
-          'https://picsum.photos/id/293/600/600',
-          'https://picsum.photos/id/294/600/600'
-        ],
-        detailImage: 'https://picsum.photos/id/292/1200/800',
-        tag: 'hot',
-        rate: 4,
-        rateCount: 128,
-        currentPrice: 59.9,
-        originalPrice: 89.0,
-        stock: 120,
-        description: '精选农家土猪肉，传统工艺制作，自然风干，肉质紧实，咸香可口，无添加剂，真空包装，安全卫生。',
-        specs: [
-          { label: '500g/袋', value: '500g' },
-          { label: '1000g/袋', value: '1000g' }
-        ],
-        features: [
-          '精选农家土猪肉制作',
-          '传统工艺，自然风干',
-          '无防腐剂，健康安全',
-          '真空包装，锁住新鲜',
-          '炒菜、蒸饭皆宜'
-        ],
-        parameters: [
-          { name: '品牌', value: '乡味园' },
-          { name: '产地', value: '广东梅州' },
-          { name: '保质期', value: '180天' },
-          { name: '储存方式', value: '阴凉干燥处存放，开封后冷藏' },
-          { name: '配料', value: '猪肉、食用盐、白砂糖、白酒、香辛料' }
-        ]
-      },
-      // 可添加其他商品的详情数据...
-    };
-    
-    // 获取对应ID的商品数据
-    product.value = mockProducts[productId] || null;
-    
-    // 初始化图片和规格
-    if (product.value) {
-      currentImage.value = product.value.imgUrl;
-      product.value.discount = productDiscount.value;
-      if (product.value.specs && product.value.specs.length) {
-        selectedSpec.value = product.value.specs[0].value;
-      }
+
+    // 调用后端商品规格/详情接口
+    const res = await axios.get('http://localhost:8080/api/productdetail/get', {
+      params: { productId }
+    });
+    const result = res.data || {};
+    const ok = result.isSuccess === true || result.success === true;
+    const details = ok && Array.isArray(result.data) ? result.data : [];
+
+    // 如果详情里没有嵌套的商品信息，则兜底请求商品基本信息
+    let baseProduct = null;
+    if (details.length > 0) {
+      baseProduct = details[0]?.product || null;
     }
+    if (!baseProduct) {
+      try {
+        const pr = await axios.get('http://localhost:8080/api/product/get', { params: { productId } });
+        const r = pr.data || {};
+        if ((r.isSuccess === true || r.success === true) && r.data) {
+          baseProduct = r.data;
+        }
+      } catch (_) {}
+    }
+
+    // 规范化图片URL：将 /static/uploads/* 映射到 http://localhost:8080/uploads/*
+    const resolveImg = (url) => {
+      if (!url) return 'https://picsum.photos/600/600?random=product';
+      if (url.startsWith('/static')) {
+        return 'http://localhost:8080' + url.replace('/static', '');
+      }
+      return url;
+    };
+
+    const name = baseProduct?.name || '商品';
+    const imgUrl = resolveImg(baseProduct?.productImg);
+    const price = details[0]?.price ?? baseProduct?.price ?? 0;
+    const stock = details[0]?.stock ?? 0;
+    const purchaseNum = baseProduct?.purchaseNum ?? 0;
+    const intro = baseProduct?.productIntro || '';
+
+    // 规格：用所有 ProductDetail 作为可选规格（按 size/price 展示）
+    const specs = details.map(d => ({
+      label: (d.size != null ? `${d.size}` : '标准') + (d.price != null ? ` / ¥${d.price}` : ''),
+      value: d.id
+    }));
+
+    product.value = {
+      id: productId,
+      name,
+      imgUrl,
+      imageList: [imgUrl],
+      detailImage: imgUrl,
+      tag: '',
+      rate: 5,
+      rateCount: purchaseNum,
+      currentPrice: price,
+      originalPrice: Number((price * 1.2).toFixed(2)),
+      stock,
+      description: intro,
+      specs,
+      features: [],
+      parameters: []
+    };
+
+    // 初始化图片与默认规格
+    currentImage.value = product.value.imgUrl;
+    product.value.discount = productDiscount.value;
+    selectedSpec.value = product.value.specs?.[0]?.value || '';
   } catch (error) {
     console.error('获取商品详情失败:', error);
     alert('加载商品详情失败，请稍后重试');

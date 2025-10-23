@@ -38,9 +38,9 @@
         <div class="note-card" v-for="(note, index) in filteredNotes" :key="note.id">
           <!-- 作者信息 -->
           <div class="note-author">
-            <img :src="note.authorAvatar" alt="作者头像" class="author-avatar" @click="viewUser(note.authorName)" />
+            <img :src="note.authorAvatar" alt="作者头像" class="author-avatar" @click="goToUser(note.userId)" />
             <div class="author-info">
-              <div class="author-name" @click="viewUser(note.authorName)">{{ note.authorName }}</div>
+              <div class="author-name" @click="goToUser(note.userId)">{{ note.authorName }}</div>
               <div class="author-tag">{{ note.authorTag }}</div>
             </div>
           </div>
@@ -97,9 +97,9 @@
         <div class="sidebar-card">
           <h3 class="sidebar-title">推荐传承人</h3>
           <div class="suggested-user" v-for="(user, index) in suggestedUsers" :key="index">
-            <img :src="user.avatar" alt="推荐用户" class="user-avatar" @click="viewUser(user.name)" />
+            <img :src="user.avatar" alt="推荐用户" class="user-avatar" @click="goToUser(user.id)" />
             <div class="user-info">
-              <div class="user-name" @click="viewUser(user.name)">{{ user.name }}</div>
+              <div class="user-name" @click="goToUser(user.id)">{{ user.name }}</div>
               <div class="user-desc">{{ user.desc }}</div>
             </div>
           </div>
@@ -205,6 +205,11 @@ import axios from 'axios';
 
 // 路由实例
 const router = useRouter();
+
+const goToUser = (userId) => {
+  if (!userId) return;
+  router.push(`/heritage-commit/${userId}`);
+};
 
 // 状态管理
 const showPublishModal = ref(false);

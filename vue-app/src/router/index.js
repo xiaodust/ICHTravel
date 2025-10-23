@@ -123,6 +123,11 @@ const router = createRouter({
       component: () => import("@/views/Commit/index.vue"),
     },
     {
+      path: "/heritage-commit/:userId",
+      name: "heritage-commit-user",
+      component: Person
+    },
+    {
       path: "/heritage-map",
       component: () => import("@/views/Map/index.vue"),
     }

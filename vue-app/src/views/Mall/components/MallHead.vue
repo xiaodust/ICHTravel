@@ -24,11 +24,11 @@
           <a href="#" class="action-link cart">
             <span class="icon">🛒</span>
             <span class="text"@click="$router.push('/shop-car')">购物车</span>
-            <span class="cart-count">3</span>
+            
           </a>
           <a href="#" class="action-link user">
             <span class="icon">👤</span>
-            <span class="text" @click="$router.push('/user-center#orders')">我的账户</span>
+            <span class="text" @click="$router.push('/user-center/profile')">我的账户</span>
           </a>
         </div>
       </div>
@@ -41,72 +41,103 @@ import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
 
 // 接收外部传参：是否需要固定导航栏（由父组件控制）
 const props = defineProps({
-  isFixed: {
+  // 是否固定导航栏
+  fixedNav: {
     type: Boolean,
-    default: false
+    default: true
   }
 });
 
+// 导航栏吸顶效果
 const navRef = ref(null);
-const fixedNavStyle = ref({});
-let originalBodyPadding = '';
-
-// 强制设置固定样式
-const setFixedStyle = async () => {
-  if (!props.isFixed || !navRef.value) return;
-  
-  await nextTick();
-  const navHeight = navRef.value.offsetHeight;
-  
-  // 内联样式：优先级最高，确保不被覆盖
-  fixedNavStyle.value = {
-    position: 'fixed',
-    top: '0',
-    left: '0',
-    width: '100%',
-    zIndex: '9999',
-    backgroundColor: '#fff',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-    margin: '0',
-    padding: '0'
-  };
-
-  // 保存原始padding，设置body间距（避免内容被遮挡）
-  originalBodyPadding = document.body.style.paddingTop || '0px';
-  document.body.style.paddingTop = `${navHeight}px`;
+const isFixed = ref(false);
+const fixedNavStyle = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  right: 0,
+  zIndex: 9999,
+  boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
 };
 
-// 恢复样式
-const resetStyle = () => {
-  if (props.isFixed) return;
-  
-  fixedNavStyle.value = {};
-  document.body.style.paddingTop = originalBodyPadding;
+let lastScrollTop = 0;
+const handleScroll = () => {
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+  // 根据滚动方向和距离控制固定状态
+  if (scrollTop > 200 && scrollTop > lastScrollTop) {
+    isFixed.value = true;
+  } else if (scrollTop < 100) {
+    isFixed.value = false;
+  }
+  lastScrollTop = scrollTop;
 };
 
-// 监听外部传参变化（父组件控制是否固定）
-watch(() => props.isFixed, (newVal) => {
-  newVal ? setFixedStyle() : resetStyle();
-}, { immediate: true });
+onMounted(() => {
+  if (props.fixedNav) {
+    window.addEventListener('scroll', handleScroll, { passive: true });
+  }
+});
 
-// 组件卸载时兜底恢复
 onUnmounted(() => {
-  resetStyle();
+  window.removeEventListener('scroll', handleScroll);
+});
+
+watch(() => props.fixedNav, async (val) => {
+  await nextTick();
+  if (val) {
+    window.addEventListener('scroll', handleScroll, { passive: true });
+  } else {
+    window.removeEventListener('scroll', handleScroll);
+    isFixed.value = false;
+  }
 });
 </script>
 
 <style scoped>
-/* 基础样式保持不变 */
+/* 通用样式重置 */
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
-  font-family: 'Helvetica Neue', Arial, sans-serif;
 }
 
 .container {
   width: 1200px;
   margin: 0 auto;
+}
+
+.navbar-container {
+  width: 100%;
+}
+
+.clearfix::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+button,
+input,
+select,
+textarea {
+  border: none;
+  outline: none;
+}
+
+button {
+  cursor: pointer;
+}
+
+h1, h2, h3, h4, h5, h6, p, ul, li {
+  margin: 0;
+  padding: 0;
+}
+
+.container-fluid {
+  width: 100%;
   padding: 0 15px;
 }
 
@@ -203,39 +234,35 @@ ul {
 }
 
 .category-item {
-  border-bottom: 1px dotted #f1f1f1;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .category-item:last-child {
   border-bottom: none;
 }
 
-.category-link {
+.category-item a {
   display: block;
-  padding: 10px 15px;
-  font-size: 14px;
-  transition: all 0.3s;
+  color: #333;
 }
 
-.category-link:hover {
-  background-color: #f9f9f9;
+.category-item a:hover {
   color: #1E90FF;
-  padding-left: 20px;
 }
 
 .main-menu {
   display: flex;
+  align-items: center;
 }
 
 .menu-item {
-  margin-right: 25px;
+  margin-right: 20px;
 }
 
 .menu-link {
-  font-size: 16px;
-  font-weight: 500;
   color: #333;
-  transition: color 0.3s;
+  font-weight: 500;
 }
 
 .menu-link:hover {
@@ -243,41 +270,30 @@ ul {
 }
 
 .search-box {
+  margin-left: auto;
+  margin-right: 20px;
   display: flex;
-  flex: 1;
-  max-width: 500px;
-  margin-right: 30px;
+  align-items: center;
+  background-color: #f5f5f5;
+  padding: 5px;
+  border-radius: 4px;
 }
 
 .search-input {
-  flex: 1;
-  height: 40px;
+  width: 250px;
+  height: 32px;
   padding: 0 15px;
-  border: 2px solid #1E90FF;
-  border-right: none;
-  border-radius: 4px 0 0 4px;
   outline: none;
-  font-size: 14px;
-}
-
-.search-input:focus {
-  border-color: blue;
+  border: none;
+  background: transparent;
 }
 
 .search-btn {
   width: 80px;
-  height: 40px;
+  height: 32px;
   background-color: #1E90FF;
   color: #fff;
-  border: none;
-  border-radius: 0 4px 4px 0;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.search-btn:hover {
-  background-color: blue;
+  border-radius: 4px;
 }
 
 .user-actions {
@@ -286,23 +302,26 @@ ul {
 }
 
 .action-link {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  margin-left: 25px;
-  font-size: 14px;
+  margin-left: 20px;
   color: #333;
-  transition: color 0.3s;
+}
+
+.action-link .icon {
+  margin-right: 8px;
+  font-size: 18px;
+}
+
+.action-link .text {
+  font-size: 14px;
 }
 
 .action-link:hover {
   color: #1E90FF;
 }
 
-.action-link .icon {
-  font-size: 20px;
-  margin-right: 5px;
-}
-
+/* 购物车数量徽标（可选） */
 .cart-count {
   position: relative;
   top: -10px;

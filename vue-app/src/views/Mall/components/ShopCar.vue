@@ -46,7 +46,7 @@
                 </div>
                 
                 <div class="cart-list">
-                    <div class="cart-item" v-for="(item, index) in cartItems" :key="item.id">
+                    <div class="cart-item" v-for="(item, index) in cartItems" :key="getCartItemId(item) || index">
                         <label class="item-checkbox">
                             <input type="checkbox" v-model="item.selected" @change="handleItemSelect">
                         </label>
@@ -66,7 +66,7 @@
                         </div>
                         <div class="item-subtotal">¥{{ (item.price * item.quantity).toFixed(2) }}</div>
                         <div class="item-action">
-                            <button class="action-btn remove" @click="removeItem(index)">删除</button>
+                            <button class="action-btn remove" @click="removeItemById(getCartItemId(item))">删除</button>
                             <button class="action-btn favorite" :class="{ active: item.isFavorite }" @click="toggleFavorite(index)">
                                 <i class="icon icon-favorite"></i>
                             </button>
@@ -133,49 +133,15 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import axios from 'axios';
 
-// 路由实例
-const router = useRouter();
+// 使用顶部已声明的 router 实例
 
 // 搜索查询
 const searchQuery = ref('');
 
 // 购物车商品数据
-const cartItems = ref([
-    {
-        id: 1,
-        name: '扬州漆器牡丹纹首饰盒',
-        image: 'https://ts1.tc.mm.bing.net/th/id/R-C.c7087c8ead1ddb7d20400826c70185cc?rik=GzQWm5bCTy%2fcYQ&riu=http%3a%2f%2fimg.alicdn.com%2fimgextra%2fi2%2f4289884728%2fO1CN01Oolmcn1knT9jyjiME_!!4289884728.jpg&ehk=P94V%2b8Rag1SzQq%2fGUsjneqioEMutBto8kPdFik%2fFXLU%3d&risl=&pid=ImgRaw&r=0',
-        spec: '中号',
-        origin: '江苏扬州',
-        price: 298,
-        quantity: 1,
-        selected: true,
-        isFavorite: false
-    },
-    {
-        id: 2,
-        name: '惠山泥人Q版玩偶',
-        image: 'https://ts1.tc.mm.bing.net/th/id/R-C.bc254598fc6d14332d6ba755c8d42772?rik=LCshYP77xHI1nw&riu=http%3a%2f%2fimg3.baa.bitautotech.com%2fimg%2fV2img3.baa.bitautotech.com%2fusergroup%2f2014%2f2%2f12%2fa29f1b02ac3244cbb44f34cb0da17e08_990_0_max_JPG.jpg&ehk=b8nab3sPCfCYAWwaOwehuh6hQ%2fegT390SxODc6jUk0I%3d&risl=&pid=ImgRaw&r=0',
-        spec: '单个装',
-        origin: '江苏无锡',
-        price: 88,
-        quantity: 2,
-        selected: true,
-        isFavorite: true
-    },
-    {
-        id: 3,
-        name: '徐州香包（生肖虎）',
-        image: 'https://ts2.tc.mm.bing.net/th/id/OIP-C.w4qHdpd_oF5wd3_iXXgpKQHaEI?cb=12&rs=1&pid=ImgDetMain&o=7&rm=3',
-        spec: '小号',
-        origin: '江苏徐州',
-        price: 45,
-        quantity: 1,
-        selected: false,
-        isFavorite: false
-    }
-]);
+const cartItems = ref([]);
 
 // 推荐商品
 const recommendItems = ref([
@@ -205,6 +171,7 @@ const selectAll = ref(true);
 // 删除相关
 const showDeleteModal = ref(false);
 const currentDeleteIndex = ref(-1);
+const currentDeleteId = ref(null);
 
 // 计算属性：选中商品数量
 const selectedCount = computed(() => {
@@ -231,6 +198,8 @@ const payablePrice = computed(() => {
 onMounted(() => {
     // 初始化全选状态
     updateSelectAllStatus();
+    // 加载后端购物车数据
+    loadCartItems();
 });
 
 // 更新全选状态
@@ -274,26 +243,39 @@ const handleQuantityChange = (index) => {
     }
 };
 
-// 准备删除商品
-const removeItem = (index) => {
-    currentDeleteIndex.value = index;
-    showDeleteModal.value = true;
+// 准备删除商品（改为直接删除，无确认弹窗）
+const removeItem = async (index) => {
+  const id = cartItems.value[index]?.id;
+  console.log('[Cart] Immediate delete index:', index, 'id:', id);
+  if (id) {
+    await deleteCartItemById(id);
+  } else {
+    console.warn('[Cart] No id found for deletion at index:', index);
+  }
 };
 
 // 确认删除
-const confirmDelete = () => {
-    if (currentDeleteIndex.value !== -1) {
-        cartItems.value.splice(currentDeleteIndex.value, 1);
-        updateSelectAllStatus();
-    }
-    showDeleteModal.value = false;
-    currentDeleteIndex.value = -1;
+const confirmDelete = async () => {
+  const id = currentDeleteId.value || cartItems.value[currentDeleteIndex.value]?.id;
+  console.log('[Cart] Confirm delete id:', id, 'index:', currentDeleteIndex.value);
+  if (id) {
+    await deleteCartItemById(id);
+  }
+  showDeleteModal.value = false;
+  currentDeleteIndex.value = -1;
+  currentDeleteId.value = null;
 };
 
 // 删除选中商品
-const removeSelectedItems = () => {
-    cartItems.value = cartItems.value.filter(item => !item.selected);
-    updateSelectAllStatus();
+// 统一提取后端返回的购物车条目ID，兼容多种命名/大小写
+const getCartItemId = (ci) => ci?.cartItemId || ci?.cartItemID || ci?.CartItemId || ci?.CartItemID || ci?.id || ci?.itemId || null;
+const removeSelectedItems = async () => {
+    const ids = cartItems.value.filter(item => item.selected).map(i => getCartItemId(i)).filter(Boolean);
+     for (const id of ids) {
+         await deleteCartItemById(id);
+     }
+     // 单项删除已刷新，这里不重复reload
+     updateSelectAllStatus();
 };
 
 // 切换收藏状态
@@ -303,26 +285,13 @@ const toggleFavorite = (index) => {
 
 // 添加推荐商品到购物车
 const addRecommendToCart = (item) => {
-    // 检查商品是否已在购物车中
-    const existingItem = cartItems.value.find(cartItem => cartItem.id === item.id);
-    
-    if (existingItem) {
-        // 如果已存在，增加数量
-        existingItem.quantity++;
-        existingItem.selected = true;
-    } else {
-        // 如果不存在，添加到购物车
-        cartItems.value.push({
-            ...item,
-            spec: '默认规格',
-            origin: '非遗产地',
-            quantity: 1,
-            selected: true,
-            isFavorite: false
-        });
-    }
-    
-    updateSelectAllStatus();
+    addCartItemToBackend({
+        productId: item.id,
+        name: item.name,
+        price: item.price,
+        image: item.image,
+        quantity: 1
+    });
 };
 
 // 搜索功能
@@ -348,6 +317,123 @@ const goShopping = () => {
 
 const goCheckout = () => {
     router.push('/checkout');
+};
+
+// 路由实例
+const router = useRouter();
+
+// API 基础配置
+const apiBase = 'http://localhost:8080';
+// 从登录态获取用户ID作为购物车ID（不再使用 demo-user）
+const getUserId = () => {
+  // 优先 sessionStorage（登录页已写入）
+  const sid = sessionStorage.getItem('userId');
+  if (sid) return sid;
+  // 其次 localStorage 的 userInfo.id
+  try {
+    const ui = localStorage.getItem('userInfo');
+    if (ui) {
+      const parsed = JSON.parse(ui);
+      if (parsed && parsed.id) return parsed.id;
+    }
+  } catch (_) {}
+  return null;
+};
+const cartId = getUserId();
+
+// 若未登录，提示并引导登录
+if (!cartId) {
+  console.warn('[Cart] 未检测到登录用户ID，购物车数据将无法加载');
+  alert('请先登录后再查看购物车');
+}
+
+const resolveImg = (url) => {
+  if (!url) return 'https://picsum.photos/seed/cart/200/200';
+  if (url.startsWith('/static')) return apiBase + url.replace('/static', '');
+  if (url.startsWith('/uploads')) return apiBase + url;
+  return url;
+};
+
+const normalizeItem = (ci) => {
+  const cid = getCartItemId(ci);
+  return {
+    id: cid,
+    cartItemId: cid,
+    productId: ci.productId ?? ci.pid ?? null,
+    name: ci.productName || ci.name,
+    image: resolveImg(ci.productImage || ci.image),
+    spec: ci.spec || '默认规格',
+    origin: ci.origin || '非遗产地',
+    price: Number(ci.productPrice ?? ci.price ?? 0),
+    quantity: (() => { const q = Number(ci.number ?? ci.quantity ?? 1); return q > 0 ? q : 1; })(),
+    selected: true,
+    isFavorite: false,
+    raw: ci
+  };
+};
+const loadCartItems = async () => {
+  try {
+    if (!cartId) return; // 未登录不请求
+    const res = await axios.get(`${apiBase}/api/cart/items/${cartId}`);
+    const result = res.data || {};
+    const ok = result.success === true || result.isSuccess === true || Array.isArray(result.data);
+    const items = ok && Array.isArray(result.data) ? result.data : [];
+    cartItems.value = items.map(normalizeItem);
+    console.log('[Cart] Loaded raw items:', items);
+    console.log('[Cart] Normalized items:', cartItems.value.map(i => ({ id: i.id, cartItemId: i.cartItemId, productId: i.productId })));
+    updateSelectAllStatus();
+  } catch (e) {
+    console.error('加载购物车失败:', e);
+  }
+};
+
+const uuid = () => (window.crypto?.randomUUID?.() || ('ci-' + Date.now() + '-' + Math.floor(Math.random()*1e6)));
+
+const addCartItemToBackend = async (payload) => {
+  try {
+    if (!cartId) {
+      alert('请先登录后再添加到购物车');
+      return;
+    }
+    const body = {
+      id: payload.id || uuid(),
+      cartId,
+      productId: payload.productId,
+      productName: payload.name,
+      productPrice: payload.price,
+      productImage: payload.image,
+      number: payload.quantity || 1,
+      totalPrice: Number(((payload.price || 0) * (payload.quantity || 1)).toFixed(2))
+    };
+    const res = await axios.post(`${apiBase}/api/cart/add`, body);
+    const result = res.data || {};
+    // 以HTTP 2xx返回视为成功，避免误判
+    await loadCartItems();
+  } catch (e) {
+    console.error('添加购物车失败:', e);
+    alert('添加购物车失败，请稍后重试');
+  }
+};
+
+const deleteCartItemById = async (id) => {
+  try {
+    console.log('[Cart] Deleting item id:', id, 'via', `${apiBase}/api/cart/${id}`);
+    const res = await axios.delete(`${apiBase}/api/cart/${id}`);
+    const result = res.data || {};
+    // 以HTTP 2xx返回视为成功，避免误判
+    await loadCartItems();
+  } catch (e) {
+    console.error('删除购物车项失败:', e);
+  }
+};
+const removeItemById = async (id) => {
+  console.log('[Cart] removeItemById called with id:', id);
+  if (!id) {
+    console.warn('[Cart] Missing cart item id for deletion');
+    alert('删除失败：未找到购物车条目的唯一ID');
+    return;
+  }
+  await deleteCartItemById(id);
 };
 </script>
 
