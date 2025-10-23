@@ -18,7 +18,6 @@
                 <div class="carousel-caption">
                   <h3>优选美食专场</h3>
                   <p>源自大自然的馈赠，品味地道风味</p>
-                  <!-- <button class="carousel-btn-shop" @click="$router.push('/food')">立即选购</button> -->
                 </div>
               </div>
               <div class="carousel-slide">
@@ -30,7 +29,6 @@
                 <div class="carousel-caption">
                   <h3>手工工艺品特惠</h3>
                   <p>匠心之作，传承文化之美</p>
-                  <!-- <button class="carousel-btn-shop" @click="$router.push('/craft')">探索工艺</button> -->
                 </div>
               </div>
               <div class="carousel-slide">
@@ -86,9 +84,15 @@
           </div>
         </div>
 
-        <!-- 商品网格布局（分页展示） -->
+        <!-- 商品网格布局（分页展示）- 点击卡片跳转详情页 -->
         <div class="product-grid">
-          <div class="product-card" v-for="(item, index) in currentPageProducts" :key="index">
+          <div 
+            class="product-card" 
+            v-for="(item, index) in currentPageProducts" 
+            :key="item.id"
+            @click="goToProductDetail(item.id)"
+            style="cursor: pointer;"
+          >
             <div class="card-img-container">
               <img 
                 :src="item.imgUrl" 
@@ -109,7 +113,7 @@
                 <span class="current-price">¥{{ item.currentPrice }}</span>
                 <span class="original-price">¥{{ item.originalPrice }}</span>
               </div>
-              <button class="add-cart-btn" @click="addToCart(item)">加入购物车</button>
+              <button class="add-cart-btn" @click.stop="addToCart(item)">加入购物车</button>
             </div>
           </div>
         </div>
@@ -170,24 +174,28 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
 
 // 轮播图相关
 const currentSlide = ref(0);
 const slideCount = 3;
 let carouselInterval = null;
 
-// 分页相关配置 - 改为每页9个商品
+// 分页相关配置
 const currentPage = ref(1);
-const pageSize = ref(9); // 核心修改：每页显示9个商品
+const pageSize = ref(9);
 const totalProducts = ref(0);
 const totalPages = ref(0);
 const isLoading = ref(false);
 const sortType = ref('default');
 
-// 商品数据
+// 商品数据（带唯一ID）
 const allProducts = ref([]);
 const foodProducts = ref([
   {
+    id: 'product-1001',
     name: '农家手工腊肠 500g',
     imgUrl: 'https://picsum.photos/id/292/300/300',
     tag: 'hot',
@@ -198,6 +206,7 @@ const foodProducts = ref([
     type: 'food'
   },
   {
+    id: 'product-1002',
     name: '东北有机五常大米 5kg',
     imgUrl: 'https://picsum.photos/id/139/300/300',
     tag: '',
@@ -208,6 +217,7 @@ const foodProducts = ref([
     type: 'food'
   },
   {
+    id: 'product-1003',
     name: '秦岭土蜂蜜 500g',
     imgUrl: 'https://picsum.photos/id/175/300/300',
     tag: 'new',
@@ -218,6 +228,7 @@ const foodProducts = ref([
     type: 'food'
   },
   {
+    id: 'product-1004',
     name: '无添加手工曲奇饼干 200g',
     imgUrl: 'https://picsum.photos/id/225/300/300',
     tag: '',
@@ -228,6 +239,7 @@ const foodProducts = ref([
     type: 'food'
   },
   {
+    id: 'product-1005',
     name: '新疆和田骏枣 1kg',
     imgUrl: 'https://picsum.photos/id/132/300/300',
     tag: 'hot',
@@ -241,6 +253,7 @@ const foodProducts = ref([
 
 const craftProducts = ref([
   {
+    id: 'product-2001',
     name: '景德镇手工陶瓷花瓶',
     imgUrl: 'https://picsum.photos/id/118/300/300',
     tag: 'hot',
@@ -251,6 +264,7 @@ const craftProducts = ref([
     type: 'craft'
   },
   {
+    id: 'product-2002',
     name: '海南黄花梨手串 18mm',
     imgUrl: 'https://picsum.photos/id/177/300/300',
     tag: '',
@@ -261,6 +275,7 @@ const craftProducts = ref([
     type: 'craft'
   },
   {
+    id: 'product-2003',
     name: '苏绣手帕 牡丹图',
     imgUrl: 'https://picsum.photos/id/218/300/300',
     tag: 'new',
@@ -271,6 +286,7 @@ const craftProducts = ref([
     type: 'craft'
   },
   {
+    id: 'product-2004',
     name: '宜兴紫砂壶 西施壶',
     imgUrl: 'https://picsum.photos/id/30/300/300',
     tag: '',
@@ -281,6 +297,7 @@ const craftProducts = ref([
     type: 'craft'
   },
   {
+    id: 'product-2005',
     name: '手工木雕摆件 松鹤延年',
     imgUrl: 'https://picsum.photos/id/129/300/300',
     tag: 'hot',
@@ -292,7 +309,7 @@ const craftProducts = ref([
   }
 ]);
 
-// 生成随机商品数据（模拟后端数据）
+// 生成随机商品数据（带唯一ID）
 const generateRandomProducts = (count) => {
   const productTypes = ['food', 'craft'];
   const tags = ['', 'hot', 'new'];
@@ -308,12 +325,13 @@ const generateRandomProducts = (count) => {
   ];
 
   const randomProducts = [];
+  let idCounter = 3001;
   for (let i = 0; i < count; i++) {
     const type = productTypes[Math.floor(Math.random() * productTypes.length)];
     const tag = tags[Math.floor(Math.random() * tags.length)];
-    const rate = Math.floor(Math.random() * 3) + 3; // 3-5星
+    const rate = Math.floor(Math.random() * 3) + 3;
     const rateCount = Math.floor(Math.random() * 300) + 20;
-    const id = Math.floor(Math.random() * 500); // 随机图片ID
+    const imgId = Math.floor(Math.random() * 500);
     let name, currentPrice, originalPrice;
 
     if (type === 'food') {
@@ -327,8 +345,9 @@ const generateRandomProducts = (count) => {
     }
 
     randomProducts.push({
+      id: `product-${idCounter++}`,
       name,
-      imgUrl: `https://picsum.photos/id/${id}/300/300`,
+      imgUrl: `https://picsum.photos/id/${imgId}/300/300`,
       tag,
       rate,
       rateCount,
@@ -342,27 +361,25 @@ const generateRandomProducts = (count) => {
 
 // 初始化商品数据
 const initProducts = () => {
-  // 合并初始商品并添加随机数据，模拟有多个分页
   const initialProducts = [...foodProducts.value, ...craftProducts.value];
-  const extraProducts = generateRandomProducts(85); // 额外生成85个商品，总共90个
+  const extraProducts = generateRandomProducts(85);
   allProducts.value = [...initialProducts, ...extraProducts];
   totalProducts.value = allProducts.value.length;
-  totalPages.value = Math.ceil(totalProducts.value / pageSize.value); // 基于每页9个计算总页数
+  totalPages.value = Math.ceil(totalProducts.value / pageSize.value);
 };
 
-// 获取当前页商品（核心修改：基于每页9个计算）
+// 获取当前页商品
 const currentPageProducts = computed(() => {
   const startIndex = (currentPage.value - 1) * pageSize.value;
   const endIndex = startIndex + pageSize.value;
   return allProducts.value.slice(startIndex, endIndex);
 });
 
-// 处理分页显示逻辑（最多显示5个页码）
+// 分页显示逻辑
 const visiblePageNumbers = computed(() => {
   const pages = [];
   const maxVisible = 5;
   
-  // 总页数小于等于最大显示数，全部显示
   if (totalPages.value <= maxVisible) {
     for (let i = 1; i <= totalPages.value; i++) {
       pages.push(i);
@@ -370,7 +387,6 @@ const visiblePageNumbers = computed(() => {
     return pages;
   }
   
-  // 总页数大于最大显示数，显示当前页附近的页码
   if (currentPage.value <= 3) {
     return [1, 2, 3, 4, 5];
   }
@@ -410,10 +426,8 @@ const changePage = (pageNum) => {
   }
   
   isLoading.value = true;
-  // 模拟接口请求延迟
   setTimeout(() => {
     currentPage.value = pageNum;
-    // 滚动到商品区域顶部
     document.querySelector('.product-grid').scrollIntoView({ behavior: 'smooth' });
     isLoading.value = false;
   }, 500);
@@ -422,7 +436,6 @@ const changePage = (pageNum) => {
 // 处理排序
 const handleSort = () => {
   isLoading.value = true;
-  // 模拟排序延迟
   setTimeout(() => {
     switch (sortType.value) {
       case 'price-asc':
@@ -438,11 +451,10 @@ const handleSort = () => {
         allProducts.value.sort((a, b) => (a.tag === 'new' ? -1 : b.tag === 'new' ? 1 : 0));
         break;
       default:
-        // 恢复默认排序
-        initProducts(); // 重新初始化以恢复原始顺序
+        initProducts();
         break;
     }
-    currentPage.value = 1; // 排序后回到第一页
+    currentPage.value = 1;
     isLoading.value = false;
   }, 500);
 };
@@ -451,6 +463,11 @@ const handleSort = () => {
 const addToCart = (product) => {
   console.log('加入购物车:', product);
   alert(`${product.name} 已加入购物车`);
+};
+
+// 跳转到商品详情页（路由格式：heritage-mall/{id}）
+const goToProductDetail = (productId) => {
+  router.push(`/heritage-mall/${productId}`);
 };
 
 // 轮播图控制
@@ -717,10 +734,10 @@ a {
   box-shadow: 0 0 0 2px rgba(30, 144, 255, 0.1);
 }
 
-/* 商品网格布局 - 9个商品更适合3列布局 */
+/* 商品网格布局 */
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* 3列布局更适合9个商品 */
+  grid-template-columns: repeat(3, 1fr);
   gap: 25px;
   margin-bottom: 40px;
 }
@@ -1036,7 +1053,7 @@ a {
   }
   
   .product-grid {
-    grid-template-columns: repeat(2, 1fr); /* 中等屏幕2列 */
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -1087,7 +1104,7 @@ a {
   }
   
   .product-grid {
-    grid-template-columns: 1fr; /* 小屏幕1列 */
+    grid-template-columns: 1fr;
   }
   
   .card-img-container {
