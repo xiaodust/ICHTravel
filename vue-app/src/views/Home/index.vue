@@ -141,7 +141,9 @@
       :style="{ 
         left: ballLeft, 
         top: ballTop, 
-        transition: isDragging ? 'none' : 'all 0.3s ease' 
+        transition: isDragging ? 'none' : 'all 0.3s ease',
+        position: 'fixed',
+        zIndex: 1000,
       }"
     >
       🤖
@@ -1155,6 +1157,8 @@ onUnmounted(() => {
 }
 .panel-slide {
   animation: slideIn 0.3s ease-out;
+  position: fixed !important;
+  z-index: 9999;
 }
 
 /* 响应式适配：保证移动端也有好效果 */

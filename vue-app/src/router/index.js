@@ -12,6 +12,8 @@ import BrowsingHistory from "../views/user/BrowsingHistory.vue";
 import Settings from "../views/user/Settings.vue";
 import Medals from "../views/user/Medals.vue";
 import AMapLoader from '@amap/amap-jsapi-loader';
+import Person from "../views/Commit/person.vue";
+import Shop from "../views/Mall/components/Shop.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,10 +23,19 @@ const router = createRouter({
       component: Home,
     },
     {
+      path: "/person",
+      component: Person
+    },
+    {
       path: "/home",
       name: "home",
       component: Home,
     },
+    {
+    path: '/heritage-mall/:id',
+    name: 'ProductDetail',
+    component: Shop
+  },
     {
       path: "/login",
       name: "login",
@@ -46,14 +57,14 @@ const router = createRouter({
       //   },
       // ],
     },
-    {
-      path: "/food",
-      component: () => import("@/views/Mall/components/Food.vue"),
-    },
-    {
-      path: "/craft",
-      component: () => import("@/views/Mall/components/Craft.vue"),
-    },
+    // {
+    //   path: "/food",
+    //   component: () => import("@/views/Mall/components/Food.vue"),
+    // },
+    // {
+    //   path: "/craft",
+    //   component: () => import("@/views/Mall/components/Craft.vue"),
+    // },
     {
       path: "/user-center",
       component: MainLayout,

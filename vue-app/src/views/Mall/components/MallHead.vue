@@ -5,18 +5,6 @@
     class="navbar-container" 
     :style="isFixed ? fixedNavStyle : {}"
   >
-    <!-- 顶部快捷导航 -->
-    <!-- <div class="top-nav">
-      <div class="container">
-        <div class="top-nav-left">
-          <a href="#" class="top-nav-link" @click.prevent="$router.push('/home')">返回首页</a>
-          <a href="#" class="top-nav-link">商家入驻</a>
-          <a href="#" class="top-nav-link">关于我们</a>
-          <a href="#" class="top-nav-link">联系客服</a>
-        </div>
-      </div>
-    </div> -->
-
     <!-- 主导航 -->
     <div class="main-nav">
       <div class="container">
@@ -24,21 +12,8 @@
           <a href="#" @click.prevent="$router.push('/heritage-mall')">点苏记Mall</a>
         </div>
         <nav class="category-nav">
-          <div class="category-dropdown">
-            <a href="#" class="category-title">全部分类</a>
-            <div class="category-menu">
-              <div class="category-item">
-                <a href="#" class="category-link" @click.prevent="$router.push('/food')">美味食品</a>
-              </div>
-              <div class="category-item">
-                <a href="#" class="category-link" @click.prevent="$router.push('/craft')">精品工艺</a>
-              </div>
-            </div>
-          </div>
           <ul class="main-menu">
             <li class="menu-item"><a href="#" class="menu-link" @click.prevent="$router.push('/home')">首页</a></li>
-            <li class="menu-item"><a href="#" class="menu-link" @click.prevent="$router.push('/food')">美味食品</a></li>
-            <li class="menu-item"><a href="#" class="menu-link" @click.prevent="$router.push('/craft')">精品工艺</a></li>
           </ul>
         </nav>
         <div class="search-box">
