@@ -27,14 +27,14 @@
           <a href="javascript:;" class="nav-link" @click="$router.push('/heritage-commit')">交流平台</a>
         </li>
         <li class="nav-item">
-          <a href="javascript:;" class="nav-link" @click="$router.push('/user-center')">个人中心</a>
+          <a href="javascript:;" class="nav-link" @click="gotoUserCenter">个人中心</a>
         </li>
       </ul>
       <div class="user-section">
         <template v-if="isLoggedIn">
-          <div class="user-info" @click="$router.push('/user-center')">
+          <div class="user-info" @click="gotoUserCenter">
             <img :src="userInfo.avatar" alt="用户头像" class="user-avatar">
-            <span class="user-name">{{ userInfo.name || '用户' }}</span>
+            <span class="user-name">{{ userInfo.nickName || userInfo.name || '用户' }}</span>
           </div>
           <button class="logout-btn" @click="handleLogout">登出</button>
         </template>
@@ -56,7 +56,7 @@
       <div class="gallery-wrapper">
         <!-- 图片1：南京云锦 -->
         <div class="gallery-item" @click="$router.push('/3d-workshop')">
-          <img src="https://picsum.photos/800/450?random=1" alt="南京云锦" class="gallery-img">
+          <img src="/image/南京云锦.webp" alt="南京云锦" class="gallery-img">
           <div class="item-overlay">
             <div class="overlay-content">
               <h3>南京云锦</h3>
@@ -67,7 +67,7 @@
         </div>
         <!-- 图片2：苏州苏绣 -->
         <div class="gallery-item" @click="$router.push('/3d-workshop')">
-          <img src="https://picsum.photos/800/450?random=2" alt="苏州苏绣" class="gallery-img">
+          <img src="/image/苏州苏绣.webp" alt="苏州苏绣" class="gallery-img">
           <div class="item-overlay">
             <div class="overlay-content">
               <h3>苏州苏绣</h3>
@@ -78,7 +78,7 @@
         </div>
         <!-- 图片3：扬州漆器 -->
         <div class="gallery-item" @click="$router.push('/3d-workshop')">
-          <img src="https://picsum.photos/800/450?random=3" alt="扬州漆器" class="gallery-img">
+          <img src="/image/扬州瓷器.webp" alt="扬州漆器" class="gallery-img">
           <div class="item-overlay">
             <div class="overlay-content">
               <h3>扬州漆器</h3>
@@ -89,7 +89,7 @@
         </div>
         <!-- 图片4：无锡泥人 -->
         <div class="gallery-item" @click="$router.push('/3d-workshop')">
-          <img src="https://picsum.photos/800/450?random=4" alt="无锡泥人" class="gallery-img">
+          <img src="/image/无锡泥人.jpg" alt="无锡泥人" class="gallery-img">
           <div class="item-overlay">
             <div class="overlay-content">
               <h3>无锡泥人</h3>
@@ -197,6 +197,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import axios from 'axios';
 
 // 用户登录状态
 const isLoggedIn = ref(false);
@@ -206,7 +207,7 @@ const userInfo = ref({
   avatar: 'https://q8.itc.cn/q_70/images03/20250304/f5873423f8b044d78aa8cf036bc132e0.jpeg' // 默认头像
 });
 
-// 检测登录状态 - 完全依赖localStorage
+// 检测登录状态 - 依赖localStorage
 const checkLoginStatus = () => {
   try {
     // 从localStorage检查是否有用户信息
@@ -215,6 +216,10 @@ const checkLoginStatus = () => {
       // 有用户信息则认为已登录
       isLoggedIn.value = true;
       userInfo.value = JSON.parse(savedUserInfo);
+      // 如果有userId，获取最新用户信息
+      if (userInfo.value.id) {
+        fetchUserInfo(userInfo.value.id);
+      }
     } else {
       // 无用户信息则认为未登录
       isLoggedIn.value = false;
@@ -225,12 +230,57 @@ const checkLoginStatus = () => {
   }
 };
 
-// 处理登出 - 完全前端实现
-const handleLogout = () => {
+// 获取用户详细信息
+const fetchUserInfo = async (userId) => {
+  try {
+    const response = await axios.get(`/api/user/${userId}`);
+    if (response.data && response.data.success && response.data.data) {
+      const userData = response.data.data;
+      // 更新用户信息，只使用User对象中有的字段
+      const updatedUserInfo = {
+        ...userInfo.value,
+        name: userData.name || userInfo.value.name,
+        nickName: userData.nickName || userInfo.value.nickName || '',
+        number: userData.number || userInfo.value.number || '',
+        Signature: userData.Signature || userInfo.value.Signature || '',
+        avatar: userData.avatar || userInfo.value.avatar,
+        gmtCreated: userData.gmtCreated || userInfo.value.gmtCreated,
+       
+      };
+      
+      userInfo.value = updatedUserInfo;
+      localStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
+    }
+  } catch (error) {
+    console.error('获取用户信息异常:', error);
+    // 错误时保留本地缓存的用户信息
+  }
+};
+
+// 跳转到个人中心
+const gotoUserCenter = () => {
+  if (isLoggedIn.value) {
+    // 已登录跳转到个人信息界面
+    router.push('/user-center/profile');
+  } else {
+    // 未登录跳转到登录界面
+    router.push('/login');
+  }
+};
+
+// 处理登出
+const handleLogout = async () => {
   try {
     // 清理本地登录状态
     isLoggedIn.value = false;
     localStorage.removeItem('userInfo');
+    
+    // 尝试调用后端登出接口（可选）
+    try {
+      await axios.get('/api/user/logout');
+    } catch (error) {
+      console.log('后端登出接口调用失败，但不影响前端登出');
+    }
     
     alert('登出成功');
   } catch (error) {
@@ -299,7 +349,7 @@ const gotoPage = (pageUrl) => {
   }
 };
 
-// 原有：AI助手逻辑
+// WebSocket连接实现的AI助手逻辑
 const ballLeft = ref('');
 const ballTop = ref('');
 const isDragging = ref(false);
@@ -314,6 +364,17 @@ const chatMessages = ref([
   { content: '你好！我是非遗AI助手，可帮你查询江苏非遗信息、规划游览路线～', isUser: false }
 ]);
 const inputMessage = ref('');
+
+// WebSocket相关变量
+const ws = ref(null);
+const wsConnected = ref(false);
+const wsUrl = ref('ws://localhost:8080/ws');
+const reconnectTimer = ref(null);
+const reconnectInterval = 3000; // 重连间隔(毫秒)
+const pingInterval = 15000; // 心跳间隔(毫秒)
+const pingTimer = ref(null);
+const currentChatId = ref('');
+// 根据后端配置调整
 
 // AI悬浮球初始化
 const initBallPosition = () => {
@@ -359,8 +420,8 @@ const togglePanel = () => {
   isPanelShow.value = !isPanelShow.value;
   if (isPanelShow.value) {
     const ballRect = document.getElementById('float-ball').getBoundingClientRect();
-    const panelWidth = 320;
-    const panelHeight = 600;
+    const panelWidth = 400;
+    const panelHeight = 700;
     let newLeft = ballRect.left - panelWidth - 10;
     if (newLeft < 10) newLeft = ballRect.right + 10;
     let newTop = ballRect.top;
@@ -369,43 +430,230 @@ const togglePanel = () => {
     }
     panelLeft.value = newLeft;
     panelTop.value = newTop;
+    
+    // 面板打开时连接WebSocket
+    connectWebSocket();
+  } else {
+    // 面板关闭时断开WebSocket连接
+    disconnectWebSocket();
   }
 };
 
-// AI消息发送与回复
-const generateAiResponse = (message) => {
-  const nanjingKeywords = ['南京', '云锦', '金陵刻经', '剪纸'];
-  const suzhouKeywords = ['苏州', '苏绣', '昆曲', '评弹'];
-  const routeKeywords = ['路线', '规划', '游览', '行程'];
-  if (nanjingKeywords.some(key => message.includes(key))) {
-    return '南京拥有多项国家级非遗：①云锦（中国三大名锦之首）、②金陵刻经（佛教典籍雕刻技艺）、③南京剪纸（传统民间艺术），可点击地图南京地标生成专属游览路线～';
-  } else if (suzhouKeywords.some(key => message.includes(key))) {
-    return '苏州是非遗重镇：①苏绣（中国四大名绣之一）、②昆曲（世界级非遗，“百戏之祖”）、③苏州评弹（曲艺形式），建议前往苏州非遗馆体验现场制作～';
-  } else if (routeKeywords.some(key => message.includes(key))) {
-    return '你可以通过首页“定制非遗路线”功能，选择感兴趣的城市（如南京、苏州）和非遗类型（如传统技艺、戏曲），系统会自动生成1-3日游览计划～';
-  } else {
-    const generalResponses = [
-      `你提到的“${message}”，可点击首页功能入口进一步操作～`,
-      `关于“${message}”的非遗信息，江苏13市共有300+项非遗，其中世界级4项、国家级100+项，你可以指定城市查询更详细内容～`,
-      `如需了解“${message}”相关的非遗产品，可前往“非遗商城”板块，支持传承人直供，确保正品～`
-    ];
-    return generalResponses[Math.floor(Math.random() * generalResponses.length)];
+// WebSocket连接实现的AI助手逻辑
+// WebSocket连接函数
+const connectWebSocket = () => {
+  try {
+    // 关闭现有连接（如果存在）
+    if (ws.value) {
+      ws.value.close();
+    }
+    
+    // 创建新的WebSocket连接
+    ws.value = new WebSocket(wsUrl.value);
+    
+    // 连接打开事件
+    ws.value.onopen = () => {
+      console.log('WebSocket连接已打开');
+      wsConnected.value = true;
+      
+      // 清除重连计时器
+      if (reconnectTimer.value) {
+        clearTimeout(reconnectTimer.value);
+        reconnectTimer.value = null;
+      }
+      
+      // 启动心跳机制
+      startPingInterval();
+      
+      // 如果没有对话ID，生成一个新的
+      if (!currentChatId.value) {
+        currentChatId.value = generateChatId();
+      }
+    };
+    
+    // 接收消息事件
+    ws.value.onmessage = (event) => {
+      handleWebSocketMessage(event.data);
+    };
+    
+    // 连接关闭事件
+    ws.value.onclose = () => {
+      console.log('WebSocket连接已关闭');
+      wsConnected.value = false;
+      
+      // 停止心跳计时器
+      stopPingInterval();
+      
+      // 如果面板是打开的，尝试重新连接
+      if (isPanelShow.value) {
+        attemptReconnect();
+      }
+    };
+    
+    // 连接错误事件
+    ws.value.onerror = (error) => {
+      console.error('WebSocket错误:', error);
+    };
+    
+  } catch (error) {
+    console.error('WebSocket连接失败:', error);
+    // 尝试重新连接
+    attemptReconnect();
   }
 };
+
+// 断开WebSocket连接
+const disconnectWebSocket = () => {
+  if (ws.value) {
+    ws.value.close();
+    ws.value = null;
+  }
+  wsConnected.value = false;
+  stopPingInterval();
+  
+  if (reconnectTimer.value) {
+    clearTimeout(reconnectTimer.value);
+    reconnectTimer.value = null;
+  }
+};
+
+// 尝试重新连接
+const attemptReconnect = () => {
+  if (reconnectTimer.value) {
+    return; // 已经有重连计时器在运行
+  }
+  
+  console.log(`将在${reconnectInterval/1000}秒后尝试重新连接WebSocket...`);
+  reconnectTimer.value = setTimeout(() => {
+    connectWebSocket();
+  }, reconnectInterval);
+};
+
+// 启动心跳间隔
+const startPingInterval = () => {
+  stopPingInterval(); // 确保之前的心跳已停止
+  
+  pingTimer.value = setInterval(() => {
+    if (wsConnected.value && ws.value && ws.value.readyState === WebSocket.OPEN) {
+      sendPing();
+    }
+  }, pingInterval);
+};
+
+// 停止心跳间隔
+const stopPingInterval = () => {
+  if (pingTimer.value) {
+    clearInterval(pingTimer.value);
+    pingTimer.value = null;
+  }
+};
+
+// 发送心跳
+const sendPing = () => {
+  try {
+    const pingMsg = {
+      type: 'ping',
+      content: '',
+      chatId: currentChatId.value
+    };
+    ws.value.send(JSON.stringify(pingMsg));
+  } catch (error) {
+    console.error('发送心跳失败:', error);
+  }
+};
+
+// 生成聊天ID
+const generateChatId = () => {
+  return 'chat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+};
+
+// 处理WebSocket消息
+const handleWebSocketMessage = (data) => {
+  try {
+    const message = JSON.parse(data);
+    
+    // 处理不同类型的消息
+    if (message.type === 'ping') {
+      // 心跳响应，无需特殊处理
+      console.log('收到心跳响应');
+    } else if (message.type === 'llm_QueryStream_Answer') {
+      // 处理AI回复
+      if (message.data) {
+        // 检查是否有正在接收中的AI消息
+        let lastMessage = chatMessages.value[chatMessages.value.length - 1];
+        if (!lastMessage || lastMessage.isUser) {
+          // 创建新消息
+          chatMessages.value.push({ 
+            content: message.data, 
+            isUser: false,
+            isStreaming: true
+          });
+        } else {
+          // 更新现有消息
+          lastMessage.content += message.data;
+          // 如果是流式响应结束标记，清除streaming状态
+          if (message.isEnd === true) {
+            lastMessage.isStreaming = false;
+          }
+        }
+        
+        // 滚动到底部
+        setTimeout(() => {
+          const chatContainer = document.getElementById('chat-messages');
+          if (chatContainer) {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+          }
+        }, 50);
+      }
+    } else if (message.type === 'error') {
+      // 处理错误消息
+      chatMessages.value.push({ 
+        content: '错误: ' + message.data, 
+        isUser: false 
+      });
+    }
+  } catch (error) {
+    console.error('解析WebSocket消息失败:', error);
+  }
+};
+
+// 发送用户消息
 const sendMessage = () => {
   const message = inputMessage.value.trim();
   if (!message) return;
+  
+  // 添加用户消息到聊天记录
   chatMessages.value.push({ content: message, isUser: true });
   inputMessage.value = '';
-  setTimeout(() => {
-    const aiReply = generateAiResponse(message);
-    chatMessages.value.push({ content: aiReply, isUser: false });
-    setTimeout(() => {
-      const chatContainer = document.getElementById('chat-messages');
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-    }, 100);
-  }, 800 + Math.random() * 500);
+  
+  // 确保WebSocket连接已建立
+  if (!wsConnected.value || !ws.value || ws.value.readyState !== WebSocket.OPEN) {
+    connectWebSocket();
+    // 显示等待连接的提示
+    chatMessages.value.push({ 
+      content: '正在连接AI助手...', 
+      isUser: false 
+    });
+    return;
+  }
+  
+  // 发送消息到后端
+  try {
+    const chatMsg = {
+      type: 'chat',
+      content: message,
+      chatId: currentChatId.value
+    };
+    ws.value.send(JSON.stringify(chatMsg));
+  } catch (error) {
+    console.error('发送消息失败:', error);
+    chatMessages.value.push({ 
+      content: '消息发送失败，请重试', 
+      isUser: false 
+    });
+  }
 };
+// 已在WebSocket部分实现
 const handleEnterSend = (e) => {
   if (e.key === 'Enter') sendMessage();
 };
@@ -756,8 +1004,8 @@ onUnmounted(() => {
 
 /* AI对话面板样式 */
 #ai-panel {
-  width: 320px;
-  height: 600px;
+  width: 400px;
+  height: 700px;
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
@@ -820,13 +1068,14 @@ onUnmounted(() => {
   justify-content: flex-end;
 }
 .avatar {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  font-size: 16px;
 }
 .ai-avatar {
   background-color: rgba(99, 102, 241, 0.1);
@@ -838,10 +1087,10 @@ onUnmounted(() => {
 }
 .message-content {
   max-width: 80%;
-  padding: 12px 16px;
-  border-radius: 18px;
-  font-size: 14px;
-  line-height: 1.5;
+  padding: 14px 18px;
+  border-radius: 20px;
+  font-size: 16px;
+  line-height: 1.6;
 }
 .ai-content {
   background-color: #f3f4f6;
@@ -866,20 +1115,20 @@ onUnmounted(() => {
 }
 #chat-input {
   flex: 1;
-  padding: 10px 16px;
-  border-radius: 20px;
+  padding: 12px 18px;
+  border-radius: 24px;
   border: 1px solid #e5e7eb;
   outline: none;
   transition: all 0.2s;
-  font-size: 14px;
+  font-size: 16px;
 }
 #chat-input:focus {
   border-color: #6366F1;
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
 }
 .send-btn {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background-color: #6366F1;
   color: white;
@@ -889,6 +1138,7 @@ onUnmounted(() => {
   justify-content: center;
   cursor: pointer;
   transition: background-color 0.2s;
+  font-size: 18px;
 }
 .send-btn:hover {
   background-color: #5254e0;

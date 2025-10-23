@@ -6,7 +6,7 @@
         <!-- 头像区域 -->
         <div class="avatar-container">
           <img 
-            src="https://q8.itc.cn/q_70/images03/20250304/f5873423f8b044d78aa8cf036bc132e0.jpeg" 
+            :src="userInfo.avatar" 
             alt="用户头像" 
             class="avatar"
           >
@@ -25,7 +25,8 @@
         <h2 class="profile-name">{{ userInfo.nickname }}</h2>
         <p class="profile-detail">
           手机号：{{ userInfo.phone }}<br>
-          注册时间：{{ userInfo.registerTime }} 加入点苏记
+          注册时间：{{ userInfo.registerTime }} 加入点苏记<br>
+          <span v-if="userInfo.signature">个人签名：{{ userInfo.signature }}</span>
         </p>
         
         <!-- 成长数据 -->
@@ -33,19 +34,10 @@
           累计点亮非遗点：<span class="highlight">{{ userInfo.growth.points }}</span>个 | 
           创作路线数：<span class="highlight">{{ userInfo.growth.routes }}</span>条 | 
           获得勋章：<span class="highlight">{{ userInfo.growth.medals }}</span>枚 | 
-          可用积分：<span class="highlight">{{ userInfo.growth.score }}</span>分 
-          <button @click="handleExchangeScore" class="exchange-btn">兑换</button>
+          可用积分：<span class="highlight">{{ userInfo.growth.score }}</span>分
         </div>
         
-        <!-- 操作按钮 -->
-        <div class="profile-actions">
-          <button @click="handleEditProfile" class="btn btn-outline">
-            编辑个人信息
-          </button>
-          <button @click="handleShowLevelRule" class="btn btn-outline">
-            查看等级规则
-          </button>
-        </div>
+        <!-- 操作按钮区域 - 已清空 -->
       </div>
     </div>
     
@@ -61,8 +53,6 @@
           v-for="(medal, index) in userInfo.medals" 
           :key="index"
           class="medal-item"
-          @mouseenter="handleMedalTooltipShow(medal.tooltip, $event)"
-          @mouseleave="handleMedalTooltipHide()"
         >
           <div class="medal-icon" :class="medal.active ? 'medal-active' : ''">
             <div 
@@ -78,29 +68,26 @@
         </div>
       </div>
       
-      <!-- 勋章悬浮提示 -->
-      <div 
-        v-if="tooltipVisible"
-        class="tooltip"
-        :style="{ left: tooltipLeft + 'px', top: tooltipTop + 'px' }"
-      >
-        {{ tooltipText }}
-      </div>
+      <!-- 勋章悬浮提示已移除 -->
     </div>
   </section>
 </template>
 
 <script setup>
-import { reactive, ref, inject } from 'vue';
+import { reactive, onMounted } from 'vue';
+import axios from 'axios';
 
-// 注入弹窗方法
-const modal = inject('modal');
+// 移除模态框相关代码
 
-// 用户信息
+// 用户信息 - 从localStorage读取后端返回的userInfo数据
 const userInfo = reactive({
+  // 默认值
   nickname: '苏韵非遗爱好者',
-  phone: '138****5678',
+  name: '',
+  phone: '',
   registerTime: '2024.06.18',
+  Signature: '',
+  avatar: 'https://q8.itc.cn/q_70/images03/20250304/f5873423f8b044d78aa8cf036bc132e0.jpeg',
   growth: {
     points: 32,
     routes: 5,
@@ -132,77 +119,182 @@ const userInfo = reactive({
   ]
 });
 
-// 勋章提示
-const tooltipVisible = ref(false);
-const tooltipText = ref('');
-const tooltipLeft = ref(0);
-const tooltipTop = ref(0);
+// 移除了不需要的功能函数
 
-// 勋章提示显示
-const handleMedalTooltipShow = (text, event) => {
-  tooltipText.value = text;
-  tooltipLeft.value = event.pageX + 10;
-  tooltipTop.value = event.pageY;
-  tooltipVisible.value = true;
-};
 
-// 勋章提示隐藏
-const handleMedalTooltipHide = () => {
-  tooltipVisible.value = false;
-};
 
-// 编辑个人信息
-const handleEditProfile = () => {
-  modal.open('编辑个人信息', `
-    <div class="form-group">
-      <label class="form-label" for="nickname">昵称：</label>
-      <input type="text" id="nickname" value="${userInfo.nickname}" class="form-input">
-    </div>
-    <div class="form-group">
-      <label class="form-label" for="signature">个人签名：</label>
-      <textarea id="signature" rows="2" placeholder="分享你的非遗故事..." class="form-input"></textarea>
-    </div>
-  `, 'edit-profile', true, () => {
-    const newNickname = document.getElementById('nickname').value;
-    if (newNickname) {
-      userInfo.nickname = newNickname;
+// 从后端获取用户信息
+const fetchUserInfo = async () => {
+  try {
+    console.log('开始从后端获取用户信息...');
+    
+    // 优先从sessionStorage获取userId（与后端保持一致）
+    let userId = sessionStorage.getItem('userId');
+    console.log('从sessionStorage获取的userId:', userId);
+    
+    // 如果sessionStorage中没有，再从localStorage获取
+    if (!userId) {
+      const savedUserInfo = localStorage.getItem('userInfo');
+      if (savedUserInfo) {
+        const parsedUserInfo = JSON.parse(savedUserInfo);
+        // 优先使用id字段（后端使用的字段名）
+        userId = parsedUserInfo.id;
+        console.log('从localStorage获取的用户id:', userId);
+      }
     }
-    alert('个人信息已更新');
-  });
+    
+    if (!userId) {
+      console.error('未找到用户ID，无法获取用户信息。请确认用户已正确登录，并且session中保存了userId。');
+      alert('用户身份验证失败，请重新登录');
+      return;
+    }
+    
+    console.log('准备请求用户信息，userId:', userId);
+    
+    // 调用后端接口 - 直接指向后端8080端口，避免代理配置问题
+    console.log('发起API请求:', `http://localhost:8080/api/user/${userId}`);
+    const response = await axios.get(`http://localhost:8080/api/user/${userId}`);
+    
+    console.log('API响应数据:', response.data);
+    
+    if (response.data && response.data.success) {
+      const userData = response.data.data;
+      console.log('从后端获取的用户信息:', userData);
+      
+      // 更新用户信息
+      // 更新个人名称（优先使用nickName，其次使用name）
+      if (userData.nickName) {
+        userInfo.nickname = userData.nickName;
+      } else if (userData.name) {
+        userInfo.nickname = userData.name;
+      }
+      
+      // 更新手机号 - 优先使用number字段（与后端保持一致）
+      if (userData.number) {
+        console.log('使用number字段的手机号:', userData.number);
+        // 检查是否是有效的手机号格式
+        if (/^1[3-9]\d{9}$/.test(userData.number)) {
+          // 手机号脱敏显示
+          userInfo.phone = userData.number.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
+          console.log('脱敏后显示的手机号:', userInfo.phone);
+        } else {
+          console.warn('number字段包含无效的手机号格式:', userData.number);
+          userInfo.phone = userData.number; // 原样显示，避免正则错误
+        }
+      }
+      
+      // 更新注册时间 - 使用正确的字段名gmtCreated
+      if (userData.gmtCreated) {
+        try {
+          // 格式化时间戳为YYYY.MM.DD格式
+          const date = new Date(userData.gmtCreated);
+          if (!isNaN(date.getTime())) {
+            userInfo.registerTime = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+          }
+        } catch (dateError) {
+          console.warn('日期格式化失败:', dateError);
+        }
+      }
+      
+      // 更新个人签名
+      if (userData.signature) {
+        userInfo.signature = userData.signature;
+      }
+      
+      // 更新头像
+      if (userData.avatar) {
+        userInfo.avatar = userData.avatar;
+      }
+      
+      // 将最新的用户信息保存到localStorage，以便其他地方使用
+      try {
+        localStorage.setItem('userInfo', JSON.stringify(userData));
+      } catch (storageError) {
+        console.warn('保存用户信息到localStorage失败:', storageError);
+      }
+      
+    } else {
+      console.error('获取用户信息失败:', response.data?.message || '未知错误');
+      console.error('完整响应内容:', response.data);
+    }
+  } catch (error) {
+    console.error('获取用户信息时发生异常:', error);
+    console.error('错误详情:', error.response || error.message || error);
+    
+    // 检查是否是网络或连接问题
+    if (error.code === 'ERR_NETWORK' || error.message?.includes('Network')) {
+      console.warn('网络连接问题，尝试使用缓存数据');
+    }
+    
+    // 如果后端请求失败，尝试从localStorage获取（作为降级方案）
+    loadUserInfoFromLocalStorage();
+  } finally {
+    // 打印加载完成后的userInfo状态
+    console.log('用户信息加载完成，最终状态:', userInfo);
+  }
 };
 
-// 查看等级规则
-const handleShowLevelRule = () => {
-  modal.open('非遗守护官等级规则', `
-    <ul class="list-disc pl-5 space-y-2">
-      <li><strong>青铜守护官</strong>：点亮10个非遗点</li>
-      <li><strong>黄金守护官</strong>：点亮50个非遗点 + 创作3条路线</li>
-      <li><strong>钻石守护官</strong>：点亮100个非遗点 + 创作10条路线 + 获得15枚勋章</li>
-    </ul>
-    <p class="mt-2 text-sm">等级权益：黄金及以上可解锁专属非遗体验课，钻石可获得非遗传承人一对一指导机会。</p>
-  `);
+// 从localStorage读取用户信息（作为降级方案）
+const loadUserInfoFromLocalStorage = () => {
+  try {
+    console.log('开始从localStorage读取用户信息(降级方案)...');
+    const savedUserInfo = localStorage.getItem('userInfo');
+    
+    if (savedUserInfo) {
+      const parsedUserInfo = JSON.parse(savedUserInfo);
+      
+      // 更新个人名称
+      if (parsedUserInfo.nickName) {
+        userInfo.nickname = parsedUserInfo.nickName;
+      } else if (parsedUserInfo.name) {
+        userInfo.nickname = parsedUserInfo.name;
+      }
+      
+      // 更新手机号
+      if (parsedUserInfo.number) {
+        if (/^1[3-9]\d{9}$/.test(parsedUserInfo.number)) {
+          userInfo.phone = parsedUserInfo.number.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
+        } else {
+          userInfo.phone = parsedUserInfo.number;
+        }
+      } else if (parsedUserInfo.phone) {
+        userInfo.phone = parsedUserInfo.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
+      }
+      
+      // 更新注册时间
+      if (parsedUserInfo.gmtCreated) {
+        try {
+          const date = new Date(parsedUserInfo.gmtCreated);
+          if (!isNaN(date.getTime())) {
+            userInfo.registerTime = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+          }
+        } catch (dateError) {
+          console.warn('日期格式化失败:', dateError);
+        }
+      }
+      
+      // 更新个人签名
+      if (parsedUserInfo.Signature) {
+        userInfo.Signature = parsedUserInfo.Signature;
+      }
+      
+      // 更新头像
+      if (parsedUserInfo.avatar) {
+        userInfo.avatar = parsedUserInfo.avatar;
+      }
+    }
+  } catch (error) {
+    console.error('读取localStorage用户信息失败:', error);
+  }
 };
 
-// 积分兑换
-const handleExchangeScore = () => {
-  modal.open('积分兑换', `
-    <div class="form-group">
-      <label class="form-label">可用积分：<span class="highlight">${userInfo.growth.score}</span>分</label>
-    </div>
-    <div class="form-group">
-      <label class="form-label" for="exchange-goods">可兑换商品：</label>
-      <select id="exchange-goods" class="form-select">
-        <option value="bookmark">非遗书签（80积分）</option>
-        <option value="postcard">非遗明信片（120积分）</option>
-        <option value="ticket">体验课优惠券（300积分）</option>
-      </select>
-    </div>
-  `, 'exchange', true, () => {
-    const select = document.getElementById('exchange-goods');
-    const goods = select.options[select.selectedIndex].text;
-    alert(`已兑换${goods}，扣除对应积分`);
-  });
-};
+// 页面加载时初始化
+onMounted(() => {
+  // 加载用户信息 - 从后端获取
+  fetchUserInfo();
+});
+
+// 移除了积分兑换功能
 </script>
 
 <style scoped>
@@ -244,35 +336,7 @@ const handleExchangeScore = () => {
   text-decoration: underline;
 }
 
-/* 按钮样式 */
-.btn {
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
-}
-
-.btn-primary {
-  background-color: #1E90FF;
-  color: white;
-  border: 1px solid #1E90FF;
-}
-
-.btn-primary:hover {
-  background-color: #187bcd;
-  border-color: #187bcd;
-}
-
-.btn-outline {
-  background-color: transparent;
-  color: #1E90FF;
-  border: 1px solid #1E90FF;
-}
-
-.btn-outline:hover {
-  background-color: rgba(30, 144, 255, 0.1);
-}
+/* 按钮样式已移除 */
 
 /* 个人信息样式 */
 .profile-header {
@@ -331,20 +395,11 @@ const handleExchangeScore = () => {
   font-weight: bold;
 }
 
-.exchange-btn {
-  padding: 2px 8px;
-  background-color: #1E90FF;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-}
+/* 移除了操作按钮相关样式 */
 
-.profile-actions {
-  display: flex;
-  gap: 12px;
-}
+/* 已清空操作按钮区域 */
+
+/* 表单样式已移除 */
 
 /* 勋章样式 */
 .medals-grid {
@@ -418,76 +473,9 @@ const handleExchangeScore = () => {
   color: #999;
 }
 
-/* 悬浮提示 */
-.tooltip {
-  position: absolute;
-  background-color: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  z-index: 100;
-  pointer-events: none;
-}
+/* 悬浮提示样式已移除 */
 
-/* 表单样式 */
-.form-group {
-  margin-bottom: 16px;
-}
-
-.form-label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 14px;
-}
-
-.form-input {
-  padding: 6px 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  outline: none;
-  width: 100%;
-}
-
-.form-input:focus {
-  border-color: #1E90FF;
-}
-
-.form-select {
-  padding: 6px 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  outline: none;
-  background-color: white;
-  width: 100%;
-}
-
-/* 列表样式 */
-.list-disc {
-  list-style-type: disc;
-}
-
-.space-y-2 > * {
-  margin-bottom: 8px;
-}
-
-.space-y-2 > *:last-child {
-  margin-bottom: 0;
-}
-
-.text-sm {
-  font-size: 14px;
-}
-
-.mt-2 {
-  margin-top: 8px;
-}
-
-.pl-5 {
-  padding-left: 20px;
-}
+/* 多余表单样式和列表样式已移除 */
 
 /* 响应式样式 */
 @media (max-width: 768px) {

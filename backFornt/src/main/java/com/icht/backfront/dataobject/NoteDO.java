@@ -136,15 +136,32 @@ public class NoteDO {
         note.setGmtCreated(this.getGmtCreated());
         note.setGmtModified(this.getGmtModified());
         
-        // 将JSON字符串转换为List<String>
+        // 将存储的字符串解析为图片列表，兼容JSON数组、逗号分隔与单URL
         if (this.images != null && !this.images.isEmpty()) {
             try {
-                note.setImages(objectMapper.readValue(this.images, List.class));
+                java.util.List<String> imgList = objectMapper.readValue(
+                    this.images,
+                    objectMapper.getTypeFactory().constructCollectionType(java.util.List.class, String.class)
+                );
+                note.setImages(imgList != null ? imgList : new java.util.ArrayList<>());
             } catch (Exception e) {
-                note.setImages(new ArrayList<>());
+                java.util.List<String> fallback = new java.util.ArrayList<>();
+                String s = this.images.trim();
+                if (!s.isEmpty()) {
+                    // 去除可能存在的数组括号
+                    if (s.startsWith("[") && s.endsWith("]")) {
+                        s = s.substring(1, s.length() - 1);
+                    }
+                    String[] parts = s.split("\\s*,\\s*");
+                    for (String p : parts) {
+                        String val = p.replaceAll("^\"|\"$", "").replaceAll("^'|'$", "").trim();
+                        if (!val.isEmpty()) fallback.add(val);
+                    }
+                }
+                note.setImages(fallback);
             }
         } else {
-            note.setImages(new ArrayList<>());
+            note.setImages(new java.util.ArrayList<>());
         }
         
         return note;
