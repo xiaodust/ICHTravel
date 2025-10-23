@@ -12,6 +12,7 @@ import BrowsingHistory from "../views/user/BrowsingHistory.vue";
 import Settings from "../views/user/Settings.vue";
 import Medals from "../views/user/Medals.vue";
 import AMapLoader from '@amap/amap-jsapi-loader';
+import Person from "../views/Commit/person.vue";
 import Shop from "../views/Mall/components/Shop.vue";
 
 const router = createRouter({
@@ -20,6 +21,10 @@ const router = createRouter({
     {
       path: "/",
       component: Home,
+    },
+    {
+      path: "/person",
+      component: Person
     },
     {
       path: "/home",
