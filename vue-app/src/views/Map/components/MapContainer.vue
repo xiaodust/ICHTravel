@@ -130,14 +130,14 @@ const currentRoute = ref(null)
 
 // 预设地点数据
 const presetLocations = [
-  { name: '南京站', location: [118.79294, 32.0853], type: 'station', image: '/image/微信图片_20251010131844_42_4.jpg' },
-  { name: '南京南站', location: [118.7962, 31.9968], type: 'station', image: '/image/微信图片_20251010141229_50_4.jpg' },
-  { name: '夫子庙秦淮风光带', location: [118.7931, 32.0329], type: 'attraction', image: '/image/微信图片_20251010141521_51_4.jpg' },
-  { name: '中山陵', location: [118.8490, 32.0617], type: 'attraction', image: '/image/62160623bd6efd38fashow.jpg' },
-  { name: '拙政园（苏州）', location: [120.6446, 31.3215], type: 'attraction', image: '/image/62160623bd6efd38fashow.jpg' },
-  { name: '瘦西湖（扬州）', location: [119.4379, 32.4042], type: 'attraction', image: '/image/4DB13A92315B31C38E217C83580ED86B564E3E4D_size155_w1080_h810.jpg' },
-  { name: '鼋头渚（无锡）', location: [120.2099, 31.5604], type: 'attraction', image: '/image/微信图片_20251010131844_42_4.jpg' },
-  { name: '南京禄口国际机场', location: [118.861, 31.993], type: 'airport', image: '/image/62160623bd6efd38fashow.jpg' }
+  { name: '南京站', location: [118.79294, 32.0853], type: 'station', image: '/image/南京站.webp' },
+  { name: '南京南站', location: [118.7962, 31.9968], type: 'station', image: '/image/南京站.webp' },
+  { name: '夫子庙秦淮风光带', location: [118.7931, 32.0329], type: 'attraction', image: '/image/秦淮灯会.webp' },
+  { name: '中山陵', location: [118.8490, 32.0617], type: 'attraction', image: '/image/中山陵.webp' },
+  { name: '拙政园（苏州）', location: [120.6446, 31.3215], type: 'attraction', image: '/image/拙政园.webp' },
+  { name: '瘦西湖（扬州）', location: [119.4379, 32.4042], type: 'attraction', image: '/image/瘦西湖.webp' },
+  { name: '鼋头渚（无锡）', location: [120.2099, 31.5604], type: 'attraction', image: '/image/无锡鳖头褚.webp' },
+  { name: '南京禄口国际机场', location: [118.861, 31.993], type: 'airport', image: '/image/南京禄口机场.html' }
 ]
 const locationMarkers = ref([])
 
@@ -158,56 +158,56 @@ const heritageData = [
     type: 'craft', 
     location: [118.7965, 32.0603],
     desc: '中国传统丝织工艺的巅峰代表，南京云锦具有独特的织造技艺。',
-    image: '/image/62160623bd6efd38fashow.jpg'
+    image: '/image/南京云锦.webp'
   },
   { 
     name: '昆曲艺术（苏州）', 
     type: 'art', 
     location: [120.6196, 31.3110],
     desc: '中国古老戏曲剧种之一，发源并兴盛于苏州，被判为“百戏之祖”。',
-    image: '/image/微信图片_20251010141229_50_4.jpg'
+    image: '/image/昆曲.webp'
   },
   { 
     name: '苏绣技艺（苏州刺绣）', 
     type: 'craft', 
     location: [120.6230, 31.3120],
     desc: '以细腻、雅致著称的中国四大名绣之一，针法繁多、色彩丰富。',
-    image: '/image/微信图片_20251010141521_51_4.jpg'
+    image: '/image/苏州苏绣.webp'
   },
   { 
     name: '扬州剪纸', 
     type: 'craft', 
     location: [119.4210, 32.3936],
     desc: '以线条流畅、构图精巧著称的传统民间剪纸艺术。',
-    image: '/image/微信图片_20251010131844_42_4.jpg'
+    image: '/image/扬州剪纸.webp'
   },
   { 
     name: '惠山泥人（无锡）', 
     type: 'craft', 
     location: [120.2980, 31.5910],
     desc: '以写实与夸张相结合的传统泥塑艺术，色彩鲜艳、形象生动。',
-    image: '/image/4DB13A92315B31C38E217C83580ED86B564E3E4D_size155_w1080_h810.jpg'
+    image: '/image/无锡泥人.jpg'
   },
   { 
     name: '蓝印花布印染技艺（南通）', 
     type: 'craft', 
     location: [120.8640, 32.0160],
     desc: '以植物染料与手工刻版相结合的传统印染工艺，蓝白相间清新雅致。',
-    image: '/image/62160623bd6efd38fashow.jpg'
+    image: '/image/南通蓝印花布.webp'
   },
   { 
     name: '秦淮灯会（南京）', 
     type: 'folk', 
     location: [118.7930, 32.0340],
     desc: '以精巧灯彩与节庆氛围著称的传统民俗活动，源远流长。',
-    image: '/image/微信图片_20251010131844_42_4.jpg'
+    image: '/image/秦淮灯会.webp'
   },
   { 
     name: '苏州评弹', 
     type: 'music', 
     location: [120.6280, 31.3090],
     desc: '以说唱与弹唱结合的传统曲艺形式，曲调婉转、风味悠长。',
-    image: '/image/微信图片_20251010141521_51_4.jpg'
+    image: '/image/苏州评弹.webp'
   }
 ]
 
