@@ -4,7 +4,7 @@ public class BasePageParam {
     //页数
     private int pagination=0;
     //每页数量
-    private int pageSize=10;
+    private int pageSize=9;
 
     public int getPagination() {
         return pagination;
