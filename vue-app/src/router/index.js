@@ -11,6 +11,7 @@ import Appointments from "../views/user/Appointments.vue";
 import BrowsingHistory from "../views/user/BrowsingHistory.vue";
 import Settings from "../views/user/Settings.vue";
 import Medals from "../views/user/Medals.vue";
+import AMapLoader from '@amap/amap-jsapi-loader';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
