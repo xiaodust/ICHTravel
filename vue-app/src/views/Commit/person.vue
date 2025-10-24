@@ -1,760 +1,274 @@
 <template>
-  <div class="heritage-homepage" :style="{ fontFamily: 'PingFang SC, Microsoft YaHei, sans-serif', backgroundColor: '#F0F7FF' }">
-    <!-- 1. 顶部导航栏（蓝色系渐变：主蓝→深蓝） -->
-    <nav class="page-nav" :style="{ 
-      background: 'linear-gradient(120deg, #4A90E2, #2C6ED6)', 
-      padding: '16px 24px', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'space-between',
-      boxShadow: '0 2px 10px rgba(74,144,226,0.15)'
-    }">
-      <!-- 返回按钮 -->
-      <div class="nav-left" @click="showBackTip" :style="{ cursor: 'pointer', transition: 'transform 0.2s', '&:hover': { transform: 'scale(1.1)' } }">
-        <span :style="{ fontSize: '22px', color: '#fff' }">返回</span>
-      </div>
-      <!-- 标题（贴合点苏记项目） -->
-      <h1 class="nav-title" :style="{ 
-        fontSize: '20px', 
-        fontWeight: '600', 
-        color: '#fff', 
-        margin: 0,
-        textShadow: '0 1px 2px rgba(0,0,0,0.1)'
-      }">点苏记-非遗探官</h1>
-      <!-- 设置按钮 -->
-      <div class="nav-right" @click="showSettingTip" :style="{ cursor: 'pointer', transition: 'transform 0.2s', '&:hover': { transform: 'scale(1.1)' } }">
-        <span :style="{ fontSize: '22px', color: '#fff' }">⚙️</span>
-      </div>
-    </nav>
-
-    <!-- 2. 个人信息栏（淡蓝背景+蓝色元素） -->
-    <div class="profile-section" :style="{ 
-      width: '90%', 
-      maxWidth: '1200px', 
-      margin: '20px auto', 
-      backgroundColor: '#fff', 
-      borderRadius: '12px', 
-      padding: '20px', 
-      display: 'flex', 
-      alignItems: 'center', 
-      gap: '20px',
-      boxShadow: '0 3px 15px rgba(74,144,226,0.08)'
-    }">
-      <!-- 头像（蓝色系：淡蓝背景+蓝色图标） -->
-      <div class="avatar" :style="{ 
-        width: '80px', 
-        height: '80px', 
-        borderRadius: '50%', 
-        background: 'linear-gradient(45deg, #4A90E2, #2C6ED6)', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        boxShadow: '0 2px 8px rgba(74,144,226,0.2)'
-      }" @click="isEditing && (editForm.avatarIcon = editForm.avatarIcon === '🧵' ? '🎨' : '🧵')">
-        <span :style="{ fontSize: '32px', color: '#fff' }">{{ userInfo.avatarIcon }}</span>
-      </div>
-      <!-- 个人信息详情 -->
-      <div class="profile-info" :style="{ flex: 1 }">
-        <!-- 昵称+官方标签（蓝色标签） -->
-        <div :style="{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }">
-          <h2 :style="{ fontSize: '20px', fontWeight: '600', color: '#2C6ED6', margin: 0 }">{{ userInfo.nickname }}</h2>
-          <span :style="{ 
-            backgroundColor: '#E1F0FF', 
-            color: '#2C6ED6', 
-            fontSize: '12px', 
-            padding: '3px 10px', 
-            borderRadius: '15px',
-            border: '1px solid #C9E2FF'
-          }">点苏记官方认证</span>
-        </div>
-        <!-- 简介（蓝色文字强调非遗关键词） -->
-        <p :style="{ 
-          fontSize: '15px', 
-          color: '#666', 
-          lineHeight: '1.6', 
-          margin: '0 0 10px',
-          maxWidth: '800px'
-        }">
-          走遍江苏13市非遗工坊｜<span :style="{ color: '#2C6ED6' }">UGC非遗路线创作者</span>｜<span :style="{ color: '#2C6ED6' }">非遗好物严选官</span>｜跟着我解锁吴越大地非遗魅力，响应《关于推进非物质文化遗产与旅游深度融合发展的实施意见》
-        </p>
-        <!-- 数据统计（蓝色数字+hover效果） -->
-        <div :style="{ display: 'flex', gap: '24px', fontSize: '15px', color: '#999' }">
-          <span :style="{ cursor: 'pointer', '&:hover': { color: '#2C6ED6' } }">
-            <b :style="{ color: '#2C6ED6', fontSize: '16px' }">{{ userInfo.follow }}</b> 关注
-          </span>
-          <span :style="{ cursor: 'pointer', '&:hover': { color: '#2C6ED6' } }">
-            <b :style="{ color: '#2C6ED6', fontSize: '16px' }">{{ userInfo.fans }}</b> 粉丝
-          </span>
-          <span :style="{ cursor: 'pointer', '&:hover': { color: '#2C6ED6' } }">
-            <b :style="{ color: '#2C6ED6', fontSize: '16px' }">{{ userInfo.likes }}</b> 获赞收藏
-          </span>
-        </div>
-      </div>
-      <!-- 编辑资料按钮（蓝色渐变+hover强化） -->
-      
+  <div class="user-commit-page">
+    <!-- 顶部：头像/昵称/签名（纵向布局） -->
+    <div class="user-profile">
+      <img :src="profile.avatar" alt="头像" class="profile-avatar" />
+      <div class="profile-name">{{ profile.userName }}</div>
+      <div class="profile-signature">{{ profile.signature }}</div>
     </div>
 
-    <!-- 3. 分类标签栏（蓝色系：未选中淡蓝/选中深蓝） -->
-    <div class="tag-nav" :style="{ 
-      width: '90%', 
-      maxWidth: '1200px', 
-      margin: '0 auto 20px', 
-      backgroundColor: '#fff', 
-      borderRadius: '8px', 
-      padding: '12px 20px', 
-      overflowX: 'auto', 
-      whiteSpace: 'nowrap',
-      boxShadow: '0 2px 8px rgba(74,144,226,0.08)'
-    }">
-      <button 
-        v-for="(tag, index) in tags" 
-        :key="index" 
-        @click="activeTag = index"
-        :style="activeTag === index 
-          ? { 
-            backgroundColor: 'linear-gradient(45deg, #4A90E2, #2C6ED6)', 
-            color: '#fff', 
-            border: 'none', 
-            borderRadius: '25px', 
-            padding: '10px 20px', 
-            fontSize: '15px', 
-            marginRight: '12px', 
-            cursor: 'pointer', 
-            outline: 'none',
-            boxShadow: '0 2px 8px rgba(74,144,226,0.2)',
-            transition: 'all 0.3s',
-            transform: 'scale(1.05)' // 选中后轻微放大，视觉更明显
-          }
-          : { 
-            backgroundColor: '#F0F7FF', 
-            color: '#2C6ED6', 
-            border: '1px solid #E1F0FF', 
-            borderRadius: '25px', 
-            padding: '10px 20px', 
-            fontSize: '15px', 
-            marginRight: '12px', 
-            cursor: 'pointer', 
-            outline: 'none',
-            transition: 'all 0.3s',
-            '&:hover': { 
-              backgroundColor: '#E1F0FF',
-              color: '#1A5BC8'
-            }
-          }"
-      >
-        {{ tag }}
-      </button>
-    </div>
-
-    <!-- 4. 说说列表（一行两条+蓝色系美化） -->
-    <div class="posts-list" :style="{ 
-      width: '90%', 
-      maxWidth: '1200px', 
-      margin: '0 auto 40px', 
-      display: 'grid',
-      gridTemplateColumns: 'repeat(2, 1fr)',
-      gap: '24px',
-      padding: '10px 0'
-    }">
-      <!-- 说说1：南京云锦（计划书2.1.1核心非遗） -->
-      <div class="post-card" :style="postCardStyle" v-if="activeTag === 0 || activeTag === 3">
-        <div class="post-img-wrapper" :style="{ 
-          width: '100%', 
-          aspectRatio: '1/1', 
-          borderRadius: '8px', 
-          overflow: 'hidden', 
-          position: 'relative',
-          marginBottom: '12px'
-        }">
-          <img :src="`https://picsum.photos/seed/yunjin1/600/600`" :alt="`南京云锦博物馆`" :style="{ 
-            width: '100%', 
-            height: '100%', 
-            objectFit: 'cover',
-            transition: 'transform 0.5s',
-            '&:hover': {
-              transform: 'scale(1.05)'
-            }
-          }">
-          <!-- 蓝色标签 -->
-          <div :style="{ 
-            position: 'absolute', 
-            top: '12px', 
-            left: '12px', 
-            backgroundColor: 'rgba(74,144,226,0.8)', 
-            color: '#fff', 
-            fontSize: '12px', 
-            padding: '4px 10px', 
-            borderRadius: '15px'
-          }">
-            南京云锦
+    <!-- 说说列表（参考交流社区展示） -->
+    <div class="note-feed">
+      <div class="note-card" v-for="note in notes" :key="note.id">
+        <div class="note-author">
+          <img :src="note.authorAvatar" alt="作者头像" class="author-avatar" />
+          <div class="author-info">
+            <div class="author-name">{{ note.authorName }}</div>
+            <div class="author-tag">{{ note.authorTag }}</div>
           </div>
         </div>
-        <div :style="{ padding: '0 4px' }">
-          <h3 :style="{ 
-            fontSize: '16px', 
-            fontWeight: '600', 
-            color: '#2C6ED6', 
-            margin: '0 0 8px',
-            display: '-webkit-box',
-            WebkitLineClamp: '2',
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden'
-          }">南京云锦博物馆探秘｜1人1机1天仅织5cm的"寸锦寸金"</h3>
-          <p :style="{ 
-            fontSize: '14px', 
-            color: '#666', 
-            lineHeight: '1.5', 
-            margin: '0 0 12px',
-            display: '-webkit-box',
-            WebkitLineClamp: '3',
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden'
-          }">
-            今天在南京云锦博物馆蹲了一下午！终于看到了传承人手把手演示"挑花结本"——先在纸上画纹样，再用线穿成"花本"，织的时候要2人配合：1人提花1人织造，1天只能织5-6cm…最后入手了迷你云锦披肩，手感绝了！#点苏记UGC路线 #南京非遗
-          </p>
-          <!-- 蓝色互动图标 -->
-          <div class="post-actions" :style="postActionsStyle">
-            <button :style="actionBtnStyle" @click="likePost(0)">
-              <span :style="{ marginRight: '6px', background: 'linear-gradient(45deg, #4A90E2, #2C6ED6)', WebkitBackgroundClip: 'text', color: 'transparent' }">❤️</span>
-              <span>248</span>
-            </button>
-            <button :style="actionBtnStyle" @click="showComments(0)">
-              <span :style="{ marginRight: '6px', background: 'linear-gradient(45deg, #4A90E2, #2C6ED6)', WebkitBackgroundClip: 'text', color: 'transparent' }">💬</span>
-              <span>36</span>
-            </button>
-            <button :style="actionBtnStyle" @click="sharePost(0)">
-              <span :style="{ marginRight: '6px', background: 'linear-gradient(45deg, #4A90E2, #2C6ED6)', WebkitBackgroundClip: 'text', color: 'transparent' }">🔗</span>
-              <span>19</span>
-            </button>
+        <div class="note-content">
+          <p class="note-text">{{ note.content }}</p>
+          <div class="note-images" :class="`image-count-${note.images.length}`">
+            <img v-for="(img, i) in note.images" :key="i" :src="img" alt="笔记图片" class="note-img" />
           </div>
         </div>
-      </div>
-
-      <!-- 说说2：苏州缂丝（计划书3.1.3非遗好物） -->
-      <div class="post-card" :style="postCardStyle" v-if="activeTag === 0 || activeTag === 2">
-        <div class="post-img-wrapper" :style="{ 
-          width: '100%', 
-          aspectRatio: '1/1', 
-          borderRadius: '8px', 
-          overflow: 'hidden', 
-          position: 'relative',
-          marginBottom: '12px'
-        }">
-          <img :src="`https://picsum.photos/seed/keshi1/600/600`" :alt="`苏州缂丝团扇`" :style="{ 
-            width: '100%', 
-            height: '100%', 
-            objectFit: 'cover',
-            transition: 'transform 0.5s',
-            '&:hover': {
-              transform: 'scale(1.05)'
-            }
-          }">
-          <div :style="{ 
-            position: 'absolute', 
-            top: '12px', 
-            left: '12px', 
-            backgroundColor: 'rgba(74,144,226,0.8)', 
-            color: '#fff', 
-            fontSize: '12px', 
-            padding: '4px 10px', 
-            borderRadius: '15px'
-          }">
-            苏州缂丝
-          </div>
+        <div class="note-actions">
+          <button class="action-btn" :class="{ liked: note.isLiked }" @click="toggleLike(note)">
+            <i>{{ note.isLiked ? '❤️' : '♡' }}</i>
+            <span>{{ note.likeCount }}</span>
+          </button>
+          <button class="action-btn" @click="showCommentModal(note)">
+            <i>💬</i>
+          </button>
+          <button class="action-btn" @click="shareNote(note)">
+            <i>🔗</i>
+            <span>分享</span>
+          </button>
         </div>
-        <div :style="{ padding: '0 4px' }">
-          <h3 :style="{ 
-            fontSize: '16px', 
-            fontWeight: '600', 
-            color: '#2C6ED6', 
-            margin: '0 0 8px',
-            display: '-webkit-box',
-            WebkitLineClamp: '2',
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden'
-          }">苏州缂丝团扇｜把"透空花"戴在身上的非遗美物</h3>
-          <p :style="{ 
-            fontSize: '14px', 
-            color: '#666', 
-            lineHeight: '1.5', 
-            margin: '0 0 12px',
-            display: '-webkit-box',
-            WebkitLineClamp: '3',
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden'
-          }">
-            点苏记商城新上的苏州缂丝团扇太绝了！师傅说这是"通经断纬"工艺，花纹像凭空"织"在扇面上，透光看能看到细微的空隙。买了牡丹纹样的，夏天配汉服正好～现在下单还能获赠缂丝纹样贴纸！#非遗好物 #苏州缂丝
-          </p>
-          <div class="post-actions" :style="postActionsStyle">
-            <button :style="actionBtnStyle" @click="likePost(1)">
-              <span :style="{ marginRight: '6px', background: 'linear-gradient(45deg, #4A90E2, #2C6ED6)', WebkitBackgroundClip: 'text', color: 'transparent' }">❤️</span>
-              <span>189</span>
-            </button>
-            <button :style="actionBtnStyle" @click="showComments(1)">
-              <span :style="{ marginRight: '6px', background: 'linear-gradient(45deg, #4A90E2, #2C6ED6)', WebkitBackgroundClip: 'text', color: 'transparent' }">💬</span>
-              <span>24</span>
-            </button>
-            <button :style="actionBtnStyle" @click="sharePost(1)">
-              <span :style="{ marginRight: '6px', background: 'linear-gradient(45deg, #4A90E2, #2C6ED6)', WebkitBackgroundClip: 'text', color: 'transparent' }">🔗</span>
-              <span>12</span>
-            </button>
+        <div class="comment-preview" v-if="note.comments.length > 0">
+          <div class="comment-item" v-for="(comment, i) in note.comments.slice(0, COMMENT_PREVIEW_COUNT)" :key="i">
+            <span class="comment-user">{{ comment.userName || '匿名用户' }}:</span>
+            <span class="comment-text">{{ comment.content }}</span>
           </div>
-        </div>
-      </div>
-
-      <!-- 说说3：无锡惠山泥人（计划书4.1.1路线） -->
-      <div class="post-card" :style="postCardStyle" v-if="activeTag === 0 || activeTag === 1">
-        <div class="post-img-wrapper" :style="{ 
-          width: '100%', 
-          aspectRatio: '1/1', 
-          borderRadius: '8px', 
-          overflow: 'hidden', 
-          position: 'relative',
-          marginBottom: '12px'
-        }">
-          <img :src="`https://picsum.photos/seed/huishan1/600/600`" :alt="`惠山泥人DIY`" :style="{ 
-            width: '100%', 
-            height: '100%', 
-            objectFit: 'cover',
-            transition: 'transform 0.5s',
-            '&:hover': {
-              transform: 'scale(1.05)'
-            }
-          }">
-          <div :style="{ 
-            position: 'absolute', 
-            top: '12px', 
-            left: '12px', 
-            backgroundColor: 'rgba(74,144,226,0.8)', 
-            color: '#fff', 
-            fontSize: '12px', 
-            padding: '4px 10px', 
-            borderRadius: '15px'
-          }">
-            惠山泥人
-          </div>
-        </div>
-        <div :style="{ padding: '0 4px' }">
-          <h3 :style="{ 
-            fontSize: '16px', 
-            fontWeight: '600', 
-            color: '#2C6ED6', 
-            margin: '0 0 8px',
-            display: '-webkit-box',
-            WebkitLineClamp: '2',
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden'
-          }">无锡惠山泥人DIY路线｜亲手捏个"阿福阿喜"带回家</h3>
-          <p :style="{ 
-            fontSize: '14px', 
-            color: '#666', 
-            lineHeight: '1.5', 
-            margin: '0 0 12px',
-            display: '-webkit-box',
-            WebkitLineClamp: '3',
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden'
-          }">
-            按点苏记UGC路线去了无锡惠山泥人工坊！师傅教我们揉泥、捏形、上色，原来阿福的红脸蛋要用天然朱砂调，衣服纹样要先画底稿再上色。路线还包含泥人博物馆，能看到清代的老泥人！#非遗路线 #惠山泥人
-          </p>
-          <div class="post-actions" :style="postActionsStyle">
-            <button :style="actionBtnStyle" @click="likePost(2)">
-              <span :style="{ marginRight: '6px', background: 'linear-gradient(45deg, #4A90E2, #2C6ED6)', WebkitBackgroundClip: 'text', color: 'transparent' }">❤️</span>
-              <span>215</span>
-            </button>
-            <button :style="actionBtnStyle" @click="showComments(2)">
-              <span :style="{ marginRight: '6px', background: 'linear-gradient(45deg, #4A90E2, #2C6ED6)', WebkitBackgroundClip: 'text', color: 'transparent' }">💬</span>
-              <span>42</span>
-            </button>
-            <button :style="actionBtnStyle" @click="sharePost(2)">
-              <span :style="{ marginRight: '6px', background: 'linear-gradient(45deg, #4A90E2, #2C6ED6)', WebkitBackgroundClip: 'text', color: 'transparent' }">🔗</span>
-              <span>28</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 说说4：扬州漆器（计划书附录1） -->
-      <div class="post-card" :style="postCardStyle" v-if="activeTag === 0 || activeTag === 3">
-        <div class="post-img-wrapper" :style="{ 
-          width: '100%', 
-          aspectRatio: '1/1', 
-          borderRadius: '8px', 
-          overflow: 'hidden', 
-          position: 'relative',
-          marginBottom: '12px'
-        }">
-          <img :src="`https://picsum.photos/seed/qiqi1/600/600`" :alt="`扬州漆器工坊`" :style="{ 
-            width: '100%', 
-            height: '100%', 
-            objectFit: 'cover',
-            transition: 'transform 0.5s',
-            '&:hover': {
-              transform: 'scale(1.05)'
-            }
-          }">
-          <div :style="{ 
-            position: 'absolute', 
-            top: '12px', 
-            left: '12px', 
-            backgroundColor: 'rgba(74,144,226,0.8)', 
-            color: '#fff', 
-            fontSize: '12px', 
-            padding: '4px 10px', 
-            borderRadius: '15px'
-          }">
-            扬州漆器
-          </div>
-        </div>
-        <div :style="{ padding: '0 4px' }">
-          <h3 :style="{ 
-            fontSize: '16px', 
-            fontWeight: '600', 
-            color: '#2C6ED6', 
-            margin: '0 0 8px',
-            display: '-webkit-box',
-            WebkitLineClamp: '2',
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden'
-          }">扬州漆器工坊｜一件茶具要经历"百层髹漆"有多难</h3>
-          <p :style="{ 
-            fontSize: '14px', 
-            color: '#666', 
-            lineHeight: '1.5', 
-            margin: '0 0 12px',
-            display: '-webkit-box',
-            WebkitLineClamp: '3',
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden'
-          }">
-            探访扬州漆器非遗工坊，师傅展示了"点螺"工艺——把贝壳磨成细片，一点点嵌在漆面上，还要反复髹漆、打磨，一件茶具要做3个月！入手了小尺寸的漆器首饰盒，木纹和螺钿搭配绝了～#非遗探店 #扬州漆器
-          </p>
-          <div class="post-actions" :style="postActionsStyle">
-            <button :style="actionBtnStyle" @click="likePost(3)">
-              <span :style="{ marginRight: '6px', background: 'linear-gradient(45deg, #4A90E2, #2C6ED6)', WebkitBackgroundClip: 'text', color: 'transparent' }">❤️</span>
-              <span>176</span>
-            </button>
-            <button :style="actionBtnStyle" @click="showComments(3)">
-              <span :style="{ marginRight: '6px', background: 'linear-gradient(45deg, #4A90E2, #2C6ED6)', WebkitBackgroundClip: 'text', color: 'transparent' }">💬</span>
-              <span>29</span>
-            </button>
-            <button :style="actionBtnStyle" @click="sharePost(3)">
-              <span :style="{ marginRight: '6px', background: 'linear-gradient(45deg, #4A90E2, #2C6ED6)', WebkitBackgroundClip: 'text', color: 'transparent' }">🔗</span>
-              <span>15</span>
-            </button>
+          <div class="view-more-comments" v-if="note.comments.length > 2" @click="showCommentModal(note)">
+            查看全部评论
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 5. 编辑资料弹窗（蓝色系+功能实现） -->
-    <div class="edit-modal" :style="editModalStyle" v-if="showEditModal">
-      <div class="modal-content" :style="modalContentStyle">
-        <!-- 弹窗标题 -->
-        <div class="modal-header" :style="{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          paddingBottom: '16px', 
-          borderBottom: '1px solid #E1F0FF',
-          marginBottom: '16px'
-        }">
-          <h3 :style="{ fontSize: '18px', color: '#2C6ED6', margin: 0 }">编辑个人资料</h3>
-          <span class="close-btn" @click="closeEditModal" :style="{ 
-            fontSize: '20px', 
-            color: '#999', 
-            cursor: 'pointer',
-            '&:hover': { color: '#2C6ED6' }
-          }">×</span>
+    <!-- 评论弹窗 -->
+    <div class="modal-backdrop" v-if="showCommentBox">
+      <div class="publish-modal comment-modal">
+        <div class="modal-header">
+          <h3>评论 ({{ currentNote?.commentCount || 0 }})</h3>
+          <button class="close-btn" @click="showCommentBox = false">×</button>
         </div>
-        <!-- 编辑表单 -->
-        <div class="edit-form" :style="{ display: 'flex', flexDirection: 'column', gap: '16px' }">
-          <!-- 头像选择 -->
-          <div class="form-item" :style="{ display: 'flex', alignItems: 'center', gap: '12px' }">
-            <label :style="{ width: '80px', textAlign: 'right', fontSize: '14px', color: '#666' }">头像图标</label>
-            <div :style="{ display: 'flex', gap: '12px', alignItems: 'center' }">
-              <div 
-  :style="editForm.avatarIcon === '🎨' 
-    ? { width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(45deg, #4A90E2, #2C6ED6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '20px', border: '2px solid #2C6ED6' }
-    : { width: '40px', height: '40px', borderRadius: '50%', background: '#F0F7FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2C6ED6', fontSize: '20px', border: '2px solid transparent' }"
-  @click="editForm.avatarIcon = '🎨'"
->
-  🎨
-</div>
-
-<div 
-  :style="editForm.avatarIcon === '🧵' 
-    ? { width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(45deg, #4A90E2, #2C6ED6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '20px', border: '2px solid #2C6ED6' }
-    : { width: '40px', height: '40px', borderRadius: '50%', background: '#F0F7FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2C6ED6', fontSize: '20px', border: '2px solid transparent' }"
-  @click="editForm.avatarIcon = '🧵'"
->
-  🧵
-</div>
-
-<div 
-  :style="editForm.avatarIcon === '🏺' 
-    ? { width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(45deg, #4A90E2, #2C6ED6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '20px', border: '2px solid #2C6ED6' }
-    : { width: '40px', height: '40px', borderRadius: '50%', background: '#F0F7FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2C6ED6', fontSize: '20px', border: '2px solid transparent' }"
-  @click="editForm.avatarIcon = '🏺'"
->
-  🏺
-</div>
-            </div>
-          </div>
-          <!-- 昵称编辑 -->
-          <div class="form-item" :style="{ display: 'flex', alignItems: 'center', gap: '12px' }">
-            <label :style="{ width: '80px', textAlign: 'right', fontSize: '14px', color: '#666' }">昵称</label>
-            <input 
-              v-model="editForm.nickname" 
-              :style="{ 
-                flex: 1, 
-                padding: '8px 12px', 
-                border: '1px solid #E1F0FF', 
-                borderRadius: '6px', 
-                fontSize: '14px',
-                '&:focus': {
-                  outline: 'none',
-                  borderColor: '#4A90E2',
-                  boxShadow: '0 0 0 2px rgba(74,144,226,0.1)'
-                }
-              }"
-              placeholder="请输入昵称（可包含非遗相关标识）"
-              maxlength="16"
-            >
-          </div>
-          <!-- 简介编辑 -->
-          <div class="form-item" :style="{ display: 'flex', alignItems: 'flex-start', gap: '12px' }">
-            <label :style="{ width: '80px', textAlign: 'right', fontSize: '14px', color: '#666', paddingTop: '8px' }">简介</label>
-            <textarea 
-              v-model="editForm.bio" 
-              :style="{ 
-                flex: 1, 
-                padding: '8px 12px', 
-                border: '1px solid #E1F0FF', 
-                borderRadius: '6px', 
-                fontSize: '14px',
-                minHeight: '80px',
-                resize: 'none',
-                '&:focus': {
-                  outline: 'none',
-                  borderColor: '#4A90E2',
-                  boxShadow: '0 0 0 2px rgba(74,144,226,0.1)'
-                }
-              }"
-              placeholder="请输入简介（可介绍非遗相关身份或兴趣）"
-              maxlength="200"
-            ></textarea>
-          </div>
-          <!-- 数据展示（仅查看，不可编辑） -->
-          <div class="form-item" :style="{ display: 'flex', alignItems: 'center', gap: '12px' }">
-            <label :style="{ width: '80px', textAlign: 'right', fontSize: '14px', color: '#666' }">数据</label>
-            <div :style="{ display: 'flex', gap: '16px', fontSize: '14px', color: '#666' }">
-              <span>关注: <b :style="{ color: '#2C6ED6' }">{{ userInfo.follow }}</b></span>
-              <span>粉丝: <b :style="{ color: '#2C6ED6' }">{{ userInfo.fans }}</b></span>
-              <span>获赞: <b :style="{ color: '#2C6ED6' }">{{ userInfo.likes }}</b></span>
+        <div class="modal-body comment-body">
+          <div class="comment-list">
+            <div class="comment-item" v-for="(comment, i) in currentNote?.comments || []" :key="i">
+              <img :src="comment.avatar || 'https://picsum.photos/40/40?random=default'" alt="用户头像" class="comment-avatar" />
+              <div class="comment-content">
+                <div class="comment-user">{{ comment.userName || '匿名用户' }}</div>
+                <div class="comment-text">{{ comment.content }}</div>
+              </div>
             </div>
           </div>
         </div>
-        <!-- 弹窗按钮 -->
-        <div class="modal-footer" :style="{ 
-          display: 'flex', 
-          justifyContent: 'flex-end', 
-          gap: '12px', 
-          marginTop: '20px',
-          paddingTop: '16px',
-          borderTop: '1px solid #E1F0FF'
-        }">
-          <button @click="closeEditModal" :style="{ 
-            padding: '8px 20px', 
-            border: '1px solid #E1F0FF', 
-            borderRadius: '6px', 
-            backgroundColor: '#fff', 
-            color: '#666', 
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            '&:hover': {
-              borderColor: '#4A90E2',
-              color: '#2C6ED6'
-            }
-          }">
-            取消
-          </button>
-          <button @click="saveEditForm" :style="{ 
-            padding: '8px 20px', 
-            border: 'none', 
-            borderRadius: '6px', 
-            background: 'linear-gradient(45deg, #4A90E2, #2C6ED6)', 
-            color: '#fff', 
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            '&:hover': {
-              boxShadow: '0 2px 8px rgba(74,144,226,0.2)'
-            }
-          }">
-            保存修改
-          </button>
-        </div>
       </div>
-    </div>
-
-    <!-- 互动提示弹窗（蓝色系） -->
-    <div class="toast" :style="toastStyle" v-if="showToast">
-      {{ toastText }}
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, toRefs } from 'vue';
+import { ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import axios from 'axios';
 
-// 1. 标签数据（严格对应《改版计划书.docx》核心模块）
-const tags = ref([
-  "全部", 
-  "非遗路线",  // 对应4.1.1个性化路线规划
-  "非遗好物",  // 对应3.1.3非遗好物商城
-  "工坊探店",  // 对应2.1.1非遗工坊打卡
-  "UGC创作"    // 对应2.1.1用户生成内容（UGC路线）
-]);
-const activeTag = ref(0); // 当前激活标签
+const route = useRoute();
+const userId = route.params.userId;
 
-// 2. 用户信息数据（响应式，用于编辑功能）
-const userInfo = reactive({
-  nickname: "匠履寻踪-非遗探官",
-  bio: "走遍江苏13市非遗工坊｜UGC非遗路线创作者｜非遗好物严选官｜跟着我解锁吴越大地非遗魅力，响应《关于推进非物质文化遗产与旅游深度融合发展的实施意见》",
-  avatarIcon: "🧵", // 头像图标（非遗相关：🧵=纺织/🎨=工艺/🏺=器物）
-  follow: 18,
-  fans: "3.2k",
-  likes: "2.5w"
+// 个人信息（仅头像、昵称、签名）
+const profile = ref({
+  userName: '未知用户',
+  avatar: 'https://picsum.photos/80/80?random=default',
+  signature: '这个用户很低调，暂未填写个性签名'
 });
-// 编辑表单数据（初始同步用户信息）
-const editForm = reactive({ ...toRefs(userInfo) });
-// 编辑弹窗状态
-const showEditModal = ref(false);
 
-// 3. 样式变量（统一蓝色系：淡蓝#F0F7FF、主蓝#4A90E2、深蓝#2C6ED6）
-const postCardStyle = reactive({
-  backgroundColor: '#fff',
-  borderRadius: '12px',
-  padding: '16px',
-  boxShadow: '0 3px 15px rgba(74,144,226,0.08)',
-  transition: 'all 0.3s',
-  '&:hover': {
-    transform: 'translateY(-5px)',
-    boxShadow: '0 8px 25px rgba(74,144,226,0.15)'
+const notes = ref([]);
+const showCommentBox = ref(false);
+const currentNote = ref(null);
+const COMMENT_PREVIEW_COUNT = 2;
+
+// 获取用户资料
+const loadUserProfile = async () => {
+  try {
+    const res = await axios.get(`http://localhost:8080/api/user/${userId}`);
+    const data = res?.data?.data || {};
+    profile.value.userName = data?.nickName || data?.name || '未知用户';
+    profile.value.avatar = data?.avatar || 'https://picsum.photos/80/80?random=default';
+    profile.value.signature = data?.signature || data?.intro || '这个用户很低调，暂未填写个性签名';
+  } catch (e) {
+    console.warn('加载用户信息失败：', e);
   }
-});
-const postActionsStyle = reactive({
-  display: 'flex',
-  justifyContent: 'space-between',
-  paddingTop: '12px',
-  borderTop: '1px solid #F0F7FF'
-});
-const actionBtnStyle = reactive({
-  backgroundColor: 'transparent',
-  border: 'none',
-  color: '#666',
-  fontSize: '14px',
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  padding: '4px 0',
-  '&:hover': {
-    color: '#2C6ED6',
-    fontWeight: '500'
+};
+
+// 获取该用户的说说
+const loadUserNotes = async () => {
+  try {
+    const res = await axios.get(`http://localhost:8080/api/note/user/${userId}`);
+    const list = Array.isArray(res?.data?.data) ? res.data.data : [];
+    notes.value = list.map(n => ({
+      id: n.id,
+      userId: n.userId,
+      authorAvatar: profile.value.avatar,
+      authorName: profile.value.userName,
+      authorTag: '非遗爱好者',
+      content: n.context || '',
+      images: Array.isArray(n.images) ? n.images : [],
+      likeCount: typeof n.liked === 'number' ? n.liked : 0,
+      isLiked: false,
+      commentCount: typeof n.commentCount === 'number' ? n.commentCount : 0,
+      isCollected: false,
+      comments: []
+    }));
+    // 拉取评论用于预览
+    await Promise.all(notes.value.map(async (note) => {
+      const comments = await fetchComments(note.id);
+      note.comments = comments;
+    }));
+  } catch (e) {
+    console.error('加载用户说说失败：', e);
   }
-});
-const toastStyle = reactive({
-  position: 'fixed',
-  bottom: '40px',
-  left: '50%',
-  transform: 'translateX(-50%)',
-  backgroundColor: 'rgba(44,110,214,0.9)',
-  color: '#fff',
-  padding: '12px 24px',
-  borderRadius: '30px',
-  fontSize: '15px',
-  zIndex: '9999',
-  transition: 'all 0.3s',
-  boxShadow: '0 4px 15px rgba(74,144,226,0.2)'
-});
-// 编辑弹窗样式
-const editModalStyle = reactive({
-  position: 'fixed',
-  top: 0,
-  left: 0,
-  width: '100%',
-  height: '100%',
-  backgroundColor: 'rgba(0,0,0,0.5)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: '10000',
-  backdropFilter: 'blur(2px)'
-});
-const modalContentStyle = reactive({
-  width: '90%',
-  maxWidth: '600px',
-  backgroundColor: '#fff',
-  borderRadius: '12px',
-  padding: '24px',
-  boxShadow: '0 5px 25px rgba(74,144,226,0.2)'
-});
-
-// 4. 弹窗提示数据
-const showToast = ref(false);
-const toastText = ref('');
-
-// 5. 编辑资料功能实现
-// 打开弹窗（同步最新用户信息到表单）
-const openEditModal = () => {
-  Object.assign(editForm, { ...userInfo }); // 同步数据
-  showEditModal.value = true;
 };
-// 关闭弹窗（不保存）
-const closeEditModal = () => {
-  showEditModal.value = false;
-  showTip('已取消编辑');
-};
-// 保存编辑（更新用户信息）
-const saveEditForm = () => {
-  // 简单验证：昵称不能为空
-  if (!editForm.nickname.trim()) {
-    showTip('昵称不能为空，请输入');
-    return;
+
+// 评论相关：补齐用户昵称与头像
+const userProfileCache = new Map();
+const getUserProfile = async (uid) => {
+  if (!uid) return { userName: '匿名用户', avatar: 'https://picsum.photos/50/50?random=default' };
+  if (userProfileCache.has(uid)) return userProfileCache.get(uid);
+  try {
+    const res = await axios.get(`http://localhost:8080/api/user/${uid}`);
+    const data = res?.data?.data || {};
+    const userName = data?.nickName || data?.name || '匿名用户';
+    const avatar = data?.avatar || 'https://picsum.photos/50/50?random=default';
+    const p = { userName, avatar };
+    userProfileCache.set(uid, p);
+    return p;
+  } catch (e) {
+    return { userName: '匿名用户', avatar: 'https://picsum.photos/50/50?random=default' };
   }
-  // 更新用户信息
-  Object.assign(userInfo, {
-    nickname: editForm.nickname.trim(),
-    bio: editForm.bio.trim(),
-    avatarIcon: editForm.avatarIcon
-  });
-  // 关闭弹窗+提示
-  showEditModal.value = false;
-  showTip('资料修改保存成功！');
 };
 
-// 6. 交互功能（点赞/评论/分享/提示）
-const showTip = (text) => {
-  showToast.value = true;
-  toastText.value = text;
-  setTimeout(() => {
-    showToast.value = false;
-  }, 1800);
+const fetchComments = async (noteId) => {
+  try {
+    const res = await axios.get(`http://localhost:8080/api/comment/${noteId}`);
+    if (res.data && res.data.success && res.data.code === '200') {
+      const list = Array.isArray(res.data.data) ? res.data.data : [];
+      const enriched = await Promise.all(list.map(async (c) => {
+        const profile = await getUserProfile(c.userId);
+        return {
+          userId: c.userId || '',
+          userName: c.userName || profile.userName,
+          avatar: profile.avatar,
+          content: c.content || '',
+          gmtCreated: c.gmtCreated || null
+        };
+      }));
+      return enriched;
+    }
+  } catch (e) {
+    console.error('获取评论失败:', e);
+  }
+  return [];
 };
 
-// 针对性提示（贴合说说内容+非遗主题）
-const showBackTip = () => showTip('返回上一页，可查看更多江苏非遗内容');
-const showSettingTip = () => showTip('设置功能开发中，将支持非遗偏好个性化推荐');
-const likePost = (index) => {
-  const postThemes = ['南京云锦', '苏州缂丝', '无锡惠山泥人', '扬州漆器'];
-  showTip(`已点赞「${postThemes[index]}」说说，支持非遗活态传承！`);
+// 点赞/取消点赞（与社区页一致）
+const likeInFlight = new Set();
+const toggleLike = async (note) => {
+  if (!note || !note.id) return;
+  if (likeInFlight.has(note.id)) return;
+  likeInFlight.add(note.id);
+  try {
+    if (note.isLiked) {
+      const res = await axios.post('http://localhost:8080/api/note/unlike', { id: note.id }, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        transformRequest: [(data) => `id=${encodeURIComponent(data.id)}`]
+      });
+      if (res.data && res.data.success && res.data.code === '200') {
+        const updated = res.data.data;
+        note.likeCount = typeof updated?.liked === 'number' ? updated.liked : Math.max(0, note.likeCount - 1);
+        note.isLiked = false;
+      } else {
+        note.likeCount = Math.max(0, note.likeCount - 1);
+        note.isLiked = false;
+      }
+    } else {
+      const res = await axios.post('http://localhost:8080/api/note/like', { id: note.id }, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        transformRequest: [(data) => `id=${encodeURIComponent(data.id)}`]
+      });
+      if (res.data && res.data.success && res.data.code === '200') {
+        const updated = res.data.data;
+        note.likeCount = typeof updated?.liked === 'number' ? updated.liked : note.likeCount + 1;
+        note.isLiked = true;
+      } else {
+        note.likeCount += 1;
+        note.isLiked = true;
+      }
+    }
+  } catch (e) {
+    if (note.isLiked) {
+      note.likeCount = Math.max(0, note.likeCount - 1);
+      note.isLiked = false;
+    } else {
+      note.likeCount += 1;
+      note.isLiked = true;
+    }
+    console.error('点赞接口异常:', e);
+  } finally {
+    likeInFlight.delete(note.id);
+  }
 };
-const showComments = (index) => {
-  const postThemes = ['南京云锦', '苏州缂丝', '无锡惠山泥人', '扬州漆器'];
-  showTip(`查看「${postThemes[index]}」的评论，发现更多非遗故事`);
+
+const showCommentModal = async (note) => {
+  currentNote.value = JSON.parse(JSON.stringify(note));
+  const comments = await fetchComments(note.id);
+  currentNote.value.comments = comments;
+  showCommentBox.value = true;
 };
-const sharePost = (index) => {
-  const postThemes = ['南京云锦', '苏州缂丝', '无锡惠山泥人', '扬州漆器'];
-  showTip(`分享「${postThemes[index]}」说说成功，让更多人了解江苏非遗！`);
+
+const shareNote = (note) => {
+  alert(`分享笔记：${note.content.substring(0, 20)}...`);
 };
+
+onMounted(async () => {
+  await loadUserProfile();
+  await loadUserNotes();
+});
 </script>
+
+<style>
+.user-commit-page { width: 100%; min-height: 100vh; background: url('/image/Person页面背景图.jpg') center / cover no-repeat fixed; }
+.user-profile { display: flex; flex-direction: column; align-items: center; padding: 20px 0; }
+.profile-avatar { width: 88px; height: 88px; border-radius: 50%; object-fit: cover; }
+.profile-name { margin-top: 10px; font-size: 18px; font-weight: 600; }
+.profile-signature { margin-top: 6px; font-size: 14px; color: #666; }
+
+.note-feed { width: 90%; max-width: 900px; margin: 0 auto; }
+.note-card { background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); padding: 12px; margin-bottom: 16px; }
+.note-author { display: flex; align-items: center; }
+.author-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+.author-info { margin-left: 10px; }
+.author-name { font-weight: 600; }
+.author-tag { font-size: 12px; color: #999; }
+.note-text { margin: 10px 0; font-size: 14px; color: #333; }
+.note-images { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.note-img { width: 100%; border-radius: 6px; }
+.note-actions { display: flex; gap: 10px; margin-top: 8px; }
+.action-btn { display: inline-flex; align-items: center; gap: 6px; border: none; background: transparent; cursor: pointer; color: #555; }
+.action-btn.liked { color: #e74c3c; }
+.comment-preview { margin-top: 10px; }
+.comment-item { font-size: 13px; color: #555; margin-bottom: 6px; }
+.comment-user { font-weight: 600; margin-right: 4px; }
+.view-more-comments { color: #2C6ED6; cursor: pointer; font-size: 13px; }
+
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; }
+.publish-modal { background: #fff; width: 520px; border-radius: 8px; overflow: hidden; }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid #eee; }
+.modal-body { padding: 12px; max-height: 420px; overflow-y: auto; }
+.comment-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin-right: 8px; }
+.comment-content { display: inline-block; vertical-align: middle; }
+.close-btn { border: none; background: transparent; font-size: 20px; cursor: pointer; }
+</style>

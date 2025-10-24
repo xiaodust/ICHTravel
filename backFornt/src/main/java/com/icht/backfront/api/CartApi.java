@@ -2,6 +2,7 @@ package com.icht.backfront.api;
 
 import com.icht.backfront.dao.CartItemDAO;
 import com.icht.backfront.dao.ShoppingCartDAO;
+import com.icht.backfront.dataobject.CartItemDO;
 import com.icht.backfront.dataobject.ShoppingCartDO;
 import com.icht.backfront.model.CartItem;
 import com.icht.backfront.model.Result;
@@ -12,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -47,6 +49,7 @@ public class CartApi {
             itemId.add(cartItem.getId());
             shoppingCart.setItemId(itemId);
         }
+        
         shoppingCartDAO.updateShoppingCart(new ShoppingCartDO(shoppingCart));
         result.setData(cartItem);
         result.setCode("200");
@@ -80,14 +83,31 @@ public class CartApi {
     @ResponseBody
     public Result deleteCartItem(@PathVariable String cartItemId) {
         Result result = new Result();
-        result.setSuccess(true);
+        CartItemDO itemDO = cartItemDAO.findById(cartItemId);
+        if (itemDO == null) {
+            result.setSuccess(false);
+            result.setCode("602");
+            result.setMessage("购物车条目不存在");
+            return result;
+        }
+        ShoppingCart shoppingCart = shoppingCartService.getByUserId(itemDO.getCartId());
+        if (shoppingCart == null) {
+            result.setSuccess(false);
+            result.setCode("601");
+            result.setMessage("购物车不存在");
+            return result;
+        }
+        shoppingCart.setTotalPrice(shoppingCart.getTotalPrice() - itemDO.getTotalPrice());
+        shoppingCart.setNumber(shoppingCart.getNumber() - itemDO.getNumber());
+        List<String> itemIdList = shoppingCart.getItemId();
+        if (itemIdList != null) {
+            itemIdList.remove(cartItemId);
+            shoppingCart.setItemId(itemIdList);
+        }
+        shoppingCartDAO.updateShoppingCart(new ShoppingCartDO(shoppingCart));
+        // 删除条目
         cartItemService.deleteItem(cartItemId);
-        ShoppingCart shoppingCart=shoppingCartService.getByUserId(cartItemId);
-        shoppingCart.setTotalPrice(shoppingCart.getTotalPrice()-cartItemDAO.findById(cartItemId).getTotalPrice());
-        shoppingCart.setNumber(shoppingCart.getNumber()-cartItemDAO.findById(cartItemId).getNumber());
-        List<String> itemId=shoppingCart.getItemId();
-        itemId.remove(cartItemId);
-        shoppingCart.setItemId(itemId);
+        result.setSuccess(true);
         result.setData(shoppingCart);
         result.setCode("200");
         result.setMessage("删除成功");
