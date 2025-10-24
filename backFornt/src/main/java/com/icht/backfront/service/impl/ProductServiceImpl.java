@@ -54,7 +54,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         if (basePageParam.getPageSize()<0){
-            basePageParam.setPageSize(10);
+            basePageParam.setPageSize(9);
         }
 
         int count =productDAO.selectAllCounts();

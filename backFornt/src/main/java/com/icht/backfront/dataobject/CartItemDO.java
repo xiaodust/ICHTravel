@@ -12,6 +12,8 @@ public class CartItemDO {
     private String cartId;
 
     private String productId;
+    
+    private String productDetailId; // 新增商品详情ID字段，用于存储用户选择的商品规格ID
 
     private int number;
 
@@ -50,6 +52,14 @@ public class CartItemDO {
 
     public void setProductId(String productId) {
         this.productId = productId;
+    }
+    
+    public String getProductDetailId() {
+        return productDetailId;
+    }
+    
+    public void setProductDetailId(String productDetailId) {
+        this.productDetailId = productDetailId;
     }
 
     public int getNumber() {
@@ -119,6 +129,7 @@ public class CartItemDO {
         cartItem.setId(this.id);
         cartItem.setCartId(this.cartId);
         cartItem.setProductId(this.productId);
+        cartItem.setProductDetailId(this.productDetailId);
         cartItem.setNumber(this.number);
         cartItem.setProductName(this.productName);
         cartItem.setProductPrice(this.productPrice);

@@ -10,6 +10,8 @@ public class CartItem {
     private String cartId;
 
     private String productId;
+    
+    private String productDetailId; // 新增商品详情ID字段，用于存储用户选择的商品规格ID
 
     private int number;
 
@@ -48,6 +50,14 @@ public class CartItem {
 
     public void setProductId(String productId) {
         this.productId = productId;
+    }
+    
+    public String getProductDetailId() {
+        return productDetailId;
+    }
+    
+    public void setProductDetailId(String productDetailId) {
+        this.productDetailId = productDetailId;
     }
 
     public int getNumber() {

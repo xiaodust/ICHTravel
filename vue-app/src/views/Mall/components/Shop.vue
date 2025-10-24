@@ -197,12 +197,14 @@ const addToCart = async () => {
       id,
       cartId,
       productId: product.value.id,
+      productDetailId: selectedSpec.value, // 添加商品详情ID字段，保存用户选择的规格ID
       productName: product.value.name,
       productPrice: product.value.currentPrice,
       productImage: resolveImg(product.value.imgUrl),
       number: quantity.value,
       totalPrice: Number((product.value.currentPrice * quantity.value).toFixed(2))
     };
+    console.log('添加购物车参数:', body);
     const res = await axios.post(`${apiBase}/api/cart/add`, body);
     const result = res.data || {};
     // 以HTTP 2xx返回视为成功，避免误判
@@ -297,6 +299,20 @@ const fetchProductDetail = async () => {
 // 页面加载时获取商品详情
 onMounted(() => {
   fetchProductDetail();
+  
+  // 检查URL参数，如果是从商品列表页跳转过来的
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('action') === 'add-to-cart') {
+    // 使用setTimeout确保DOM已经渲染完成
+    setTimeout(() => {
+      alert('请选择您需要的商品规格后，再点击"加入购物车"按钮');
+      // 可以滚动到规格选择区域
+      const specSection = document.querySelector('.specification');
+      if (specSection) {
+        specSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 500);
+  }
 });
 </script>
 
