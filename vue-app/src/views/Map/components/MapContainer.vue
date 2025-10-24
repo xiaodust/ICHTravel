@@ -1,22 +1,22 @@
 <template>
   <div class="map-wrapper">
-      <header class="map-header">
-        <button @click="goToHome" class="home-btn">
-          ← 返回主页
-        </button>
-        <div class="map-header-content">
-          <div style="margin-bottom: 10px;">
-            <h1 class="map-title">江苏非遗文化地图</h1>
-          </div>
-          <p class="map-subtitle">云锦 · 昆曲 · 苏绣 · 灯会 · 评弹</p>
-        <div class="heritage-badges">
-          <span class="badge badge-craft">传统技艺</span>
-          <span class="badge badge-art">民间艺术</span>
-          <span class="badge badge-music">传统音乐</span>
-          <span class="badge badge-folk">民俗活动</span>
+    <header class="map-header">
+      <button @click="goToHome" class="home-btn">
+        ← 返回主页
+      </button>
+      <div class="map-header-content">
+        <div style="margin-bottom: 10px;">
+          <h1 class="map-title">江苏非遗文化地图</h1>
         </div>
+        <p class="map-subtitle">云锦 · 昆曲 · 苏绣 · 灯会 · 评弹</p>
+      <div class="heritage-badges">
+        <span class="badge badge-craft">传统技艺</span>
+        <span class="badge badge-art">民间艺术</span>
+        <span class="badge badge-music">传统音乐</span>
+        <span class="badge badge-folk">民俗活动</span>
       </div>
-    </header>
+    </div>
+  </header>
     
     <div class="main-content">
       <!-- 中间地图区域 -->
@@ -665,6 +665,37 @@ onUnmounted(() => {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif;
 }
 
+/* 顶部Banner样式 - 与主页保持一致 */
+.banner {
+  width: 100%;
+  height: 280px;
+  position: relative;
+  overflow: hidden;
+}
+.banner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.banner-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+.banner-text h1 {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.banner-text p {
+  font-size: 1.2rem;
+  margin: 0;
+}
+
 /* 标题栏 */
 .map-header {
   background: linear-gradient(135deg, #3a86ff, #8338ec);
@@ -978,7 +1009,7 @@ onUnmounted(() => {
   padding: 0;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   /* 改为与首页Banner一致的图片背景 */
-  background-image: url('/image/微信图片_20251010141521_51_4.jpg');
+  background-image: url('/image/Person页面背景图.jpg');
   background-size: cover;
   background-position: center;
 }
