@@ -387,14 +387,14 @@ const filteredNotes = computed(() => {
   return notes.value.filter(note => note.category === activeCategory.value);
 });
 
-// 方法：左侧分类导航切换
+// 左侧分类导航切换
 const changeCategory = (category) => {
   activeCategory.value = category;
   // 滚动到顶部
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// 方法：关注/取消关注作者
+// 关注/取消关注作者
 const toggleFollow = (note) => {
   note.isFollowing = !note.isFollowing;
   if (note.isFollowing) {
@@ -404,7 +404,7 @@ const toggleFollow = (note) => {
   }
 };
 
-// 方法：点赞/取消点赞
+// 点赞/取消点赞
 const likeInFlight = new Set();
 const toggleLike = async (note) => {
   if (!note || !note.id) return;
@@ -564,23 +564,23 @@ const submitComment = async () => {
   }
 };
 
-// 方法：查看用户主页
+// 查看用户主页
 const viewUser = (username) => {
   router.push(`/user/${encodeURIComponent(username)}`);
 };
 
-// 方法：查看话题
+// 查看话题
 const viewTopic = (topicName) => {
   router.push(`/topic/${encodeURIComponent(topicName)}`);
 };
 
-// 方法：查看图片
+// 查看图片
 const viewImage = (imgUrl) => {
   previewImageUrl.value = imgUrl;
   showImagePreview.value = true;
 };
 
-// 方法：搜索功能
+// 搜索功能
 const handleSearch = () => {
   const searchInput = document.querySelector('.search-bar input');
   const keyword = searchInput.value.trim();
@@ -589,7 +589,7 @@ const handleSearch = () => {
   }
 };
 
-// 方法：关注推荐用户
+// 关注推荐用户
 const followSuggestedUser = (user) => {
   alert(`已关注 ${user.name}`);
   // 从推荐列表中移除已关注用户
@@ -599,7 +599,7 @@ const followSuggestedUser = (user) => {
   }
 };
 
-// 方法：发布笔记
+// 发布笔记
 const publishNote = async () => {
   if (!newNoteContent.value.trim()) {
     alert('请输入笔记内容');

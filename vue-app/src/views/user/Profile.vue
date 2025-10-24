@@ -201,7 +201,6 @@ const fetchUserInfo = async () => {
         userInfo.signature = userData.signature;
       }
       
-      // 更新头像
       if (userData.avatar) {
         userInfo.avatar = userData.avatar;
       }
@@ -243,14 +242,12 @@ const loadUserInfoFromLocalStorage = () => {
     if (savedUserInfo) {
       const parsedUserInfo = JSON.parse(savedUserInfo);
       
-      // 更新个人名称
       if (parsedUserInfo.nickName) {
         userInfo.nickname = parsedUserInfo.nickName;
       } else if (parsedUserInfo.name) {
         userInfo.nickname = parsedUserInfo.name;
       }
       
-      // 更新手机号
       if (parsedUserInfo.number) {
         if (/^1[3-9]\d{9}$/.test(parsedUserInfo.number)) {
           userInfo.phone = parsedUserInfo.number.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
