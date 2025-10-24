@@ -298,20 +298,7 @@ onMounted(() => {
 const route = useRoute();
 const router = useRouter();
 
-// 页面刷新控制
-// if (!localStorage.getItem('hasRefreshed')) {
-//   localStorage.setItem('hasRefreshed', 'true');
-//   window.location.reload();
-// } else {
-//   localStorage.removeItem('hasRefreshed');
-// }
-
-// // 新增：图片详情跳转
-// const gotoDetail = (id) => {
-//   router.push(`/heritage-detail?id=${id}`);
-// };
-
-// 原有：地标弹窗控制（保留，如需启用可取消注释）
+// 地标弹窗控制
 const showPopup = (city) => {
   const popup = document.getElementById(`popup-${city}`);
   if (popup) {
@@ -330,14 +317,14 @@ const hidePopup = (city) => {
   if (popup) popup.style.display = "none";
 };
 
-// 原有：生成路线逻辑
+// 生成路线逻辑
 const gotoRoute = (city) => {
   const cityName = city === 'nanjing' ? '南京' : '苏州';
   alert(`生成${cityName}非遗路线`);
   router.push({ path: '/route', query: { city } });
 };
 
-// 原有：功能入口跳转逻辑
+// 功能入口跳转逻辑
 const gotoPage = (pageUrl) => {
   const pageName = pageUrl.split('.')[0];
   const routeMap = {

@@ -103,7 +103,7 @@ const setStorage = (key, value) => {
   localStorage.setItem(key, strValue)
 }
 
-// 加载指示器组件
+// 加载指示器
 const LoadingIndicator = {
   template: `
     <div class="loading-container">
@@ -143,7 +143,7 @@ const LoadingIndicator = {
   }
 }
 
-// 头部导航组件：优化下拉框交互和样式
+// 头部导航
 const Header = {
   props: ['isScrolled', 'isMobileNavOpen', 'currentWorkshop', 'isHomePage'],
   emits: ['toggle-mobile-nav', 'change-workshop', 'go-home'],
@@ -215,11 +215,11 @@ const Header = {
     </header>
   `,
   setup(props, { emit }) {
-    // 绑定下拉框选中值与当前工坊
+    // 下拉框选中值
     const selectedWorkshop = ref(props.currentWorkshop);
     const initialWorkshop = ref(props.currentWorkshop);
 
-    // 监听当前工坊变化，同步下拉框选中状态
+    // 同步下拉框选中状态
     watch(() => props.currentWorkshop, (newVal) => {
       selectedWorkshop.value = newVal;
       // 添加切换动画类
@@ -230,7 +230,7 @@ const Header = {
       }
     });
 
-    // 下拉框切换工坊事件
+    // 切换工坊事件
     const handleWorkshopChange = () => {
       if (selectedWorkshop.value && selectedWorkshop.value !== props.currentWorkshop) {
         emit('change-workshop', selectedWorkshop.value);
@@ -240,7 +240,7 @@ const Header = {
     };
 
     onMounted(() => {
-      // 初始化下拉框状态
+      // 初始化状态
       initialWorkshop.value = props.currentWorkshop;
     });
 
@@ -248,7 +248,7 @@ const Header = {
   }
 }
 
-// 视频与评论组件
+// 视频与评论
 const VideoComment = {
   props: ['currentWorkshop', 'likeCount', 'isLiked', 'comments'],
   emits: ['toggle-like', 'add-comment'],
