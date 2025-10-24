@@ -25,8 +25,8 @@ class FileStorageException extends RuntimeException {
 
 @Service
 public class FileStorageService {
-    // 定义存储路径 - 使用相对路径存储在项目目录下
-    private final String uploadDir = "src/main/resources/static/uploads/";
+    // 定义存储路径 - 使用绝对路径存储在项目目录下
+    private final String uploadDir = System.getProperty("user.dir") + "/src/main/resources/static/uploads/";
 
     @PostConstruct
     public void init() {
