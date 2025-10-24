@@ -41,11 +41,9 @@ public class PostController {
             
             String fileName = fileStorageService.storeBase64Image(base64Image, fileExtension);
             
-            // 生成图片访问URL
-            String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
-                    .path("/uploads/")
-                    .path(fileName)
-                    .toUriString();
+            // 生成完整的图片访问URL，包含明确的后端地址
+            // 使用固定的http://localhost:8080格式，确保前端能正确访问
+            String fileDownloadUri = "http://localhost:8080/uploads/" + fileName;
                     
             result.setSuccess(true);
             result.setCode("200");
