@@ -50,14 +50,24 @@
             </span>
           </div>
           <div class="order-detail">
-            <div class="goods-item">
-              <img :src="order.goodsImg" alt="商品图片" class="goods-img">
-              <div class="goods-info">
-                <h4 class="goods-name">{{ order.goodsName }}</h4>
-                <p class="goods-spec">{{ order.goodsSpec }}</p>
+            <!-- 多个商品列表 -->
+            <div class="goods-list" v-if="order.selectedItems.length > 0">
+              <div class="goods-item" v-for="(item, index) in order.selectedItems" :key="index">
+                <img :src="item.image" :alt="item.name" class="goods-img">
+                <div class="goods-info">
+                  <h4 class="goods-name">{{ item.name }}</h4>
+                  <p class="goods-spec">{{ item.spec || '默认规格' }}</p>
+                  <p class="goods-quantity">数量：{{ item.quantity }}</p>
+                </div>
+                <div class="goods-price">¥{{ (item.price * item.quantity).toFixed(2) }}</div>
               </div>
-              <div class="goods-price">¥{{ order.amount }}</div>
             </div>
+            
+            <!-- 商品为空时的提示 -->
+            <div class="empty-goods" v-else>
+              <p>暂无商品信息</p>
+            </div>
+            
             <div class="order-meta">
               <div class="meta-item">
                 <span class="meta-label">订单编号：</span>
@@ -66,6 +76,10 @@
               <div class="meta-item">
                 <span class="meta-label">创建时间：</span>
                 <span class="meta-value">{{ order.createTime }}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">商品总数：</span>
+                <span class="meta-value">{{ calculateTotalQuantity() }} 件</span>
               </div>
               <div class="meta-item">
                 <span class="meta-label">支付超时：</span>
@@ -206,6 +220,7 @@
         </div>
         <div class="success-order-info">
           <p>订单编号：{{ order.orderNo }}</p>
+          <p>商品总数：{{ calculateTotalQuantity() }} 件</p>
           <p>支付方式：支付宝支付</p>
           <p>支付金额：¥{{ calculateActualAmount() }}</p>
           <p>支付时间：{{ new Date().toLocaleString() }}</p>
@@ -267,6 +282,7 @@
 import { ref, reactive, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import AMapLoader from '@amap/amap-jsapi-loader'; // 缺少这行！加载SDK的关键
+import axios from 'axios';
 
 // 2. 基础配置
 // 高德地图安全配置（必须与申请的Key/安全密钥匹配）
@@ -293,17 +309,54 @@ const route = useRoute();
 
 // 订单数据
 const order = reactive({
-  id: route.query.orderId || 1,
-  orderNo: route.query.orderNo || 'DD202409035678',
-  createTime: route.query.createTime || '2024-09-03 15:40',
-  amount: route.query.amount || '176.00',
-  freight: '0.00',
+  id: generateOrderId(),
+  orderNo: generateOrderNo(),
+  createTime: new Date().toLocaleString('zh-CN'),
+  amount: route.query.totalPrice || '0.00',
+  freight: route.query.totalPrice && parseFloat(route.query.totalPrice) >= 99 ? '0.00' : '10.00',
   discount: '0.00',
   status: 'pending',
-  goodsName: route.query.goodsName || '南京樱桃鸭（礼盒装）',
-  goodsSpec: route.query.goodsSpec || '规格：1kg | 单价：¥88.00 | 数量：2',
-  goodsImg: route.query.goodsImg || 'https://img.alicdn.com/i2/3913611788/O1CN01UWkMK61P4wliRakpz_!!3913611788.jpg'
+  selectedItems: []
 });
+
+// 生成订单ID
+function generateOrderId() {
+  return Date.now() + Math.floor(Math.random() * 1000);
+}
+
+// 生成订单编号
+function generateOrderNo() {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  return `DD${year}${month}${day}${random}`;
+}
+
+// 从URL参数加载购物车数据
+function loadCartData() {
+  try {
+    if (route.query.selectedItems) {
+      order.selectedItems = JSON.parse(route.query.selectedItems);
+      // 如果没有传递总价，重新计算
+      if (!route.query.totalPrice) {
+        let total = 0;
+        order.selectedItems.forEach(item => {
+          total += item.price * item.quantity;
+        });
+        order.amount = total.toFixed(2);
+      }
+    }
+  } catch (error) {
+    console.error('加载购物车数据失败:', error);
+  }
+}
+
+// 计算商品总数量
+function calculateTotalQuantity() {
+  return order.selectedItems.reduce((sum, item) => sum + item.quantity, 0);
+}
 
 // 支付状态管理
 const paymentStatus = ref('pending');
@@ -353,21 +406,276 @@ const closeAlipayModal = () => {
   showAlipayModal.value = false;
 };
 
-// 模拟支付宝支付
-const simulateAlipayPayment = () => {
+// API 基础配置
+const apiBase = 'http://localhost:8080';
+
+// 获取用户ID
+const getUserId = () => {
+  // 优先从sessionStorage获取
+  const sid = sessionStorage.getItem('userId');
+  if (sid) return sid;
+  // 其次从localStorage的userInfo中获取
+  try {
+    const ui = localStorage.getItem('userInfo');
+    if (ui) {
+      const parsed = JSON.parse(ui);
+      if (parsed && parsed.id) return parsed.id;
+    }
+  } catch (_) {}
+  return null;
+};
+
+// 创建订单 - 调用OrderApi生成订单并存入数据库
+const createOrder = async () => {
+  try {
+    const userId = getUserId();
+    if (!userId) {
+      throw new Error('未登录或用户信息丢失');
+    }
+    
+    // 确保有选中商品
+    if (!order.selectedItems || order.selectedItems.length === 0) {
+      throw new Error('没有选中的商品');
+    }
+
+    console.log(`开始创建订单，订单号: ${order.orderNo}，用户ID: ${userId}`);
+    
+    // 为每个商品创建一个订单
+    const orderPromises = order.selectedItems.map(async (item, index) => {
+      // 重要修正：使用正确的商品详情ID
+      // 打印完整的商品对象结构以便调试
+      console.log(`商品${index + 1}完整信息:`, JSON.stringify(item));
+      
+      // 尝试从多个可能的字段获取商品详情ID
+      // 根据后端日志，商品详情ID应该是类似'p001'这样的格式
+      let productDetailId = item.productDetailId || item.detailId || (item.product && item.product.detailId);
+      
+      // 如果没有找到商品详情ID，尝试从后端API动态获取
+      if (!productDetailId && item.productId) {
+        console.log(`商品${index + 1}没有商品详情ID，尝试从后端获取`);
+        try {
+          const res = await axios.get('http://localhost:8080/api/productdetail/get', {
+            params: { productId: item.productId }
+          });
+          const result = res.data || {};
+          const ok = result.isSuccess === true || result.success === true;
+          const details = ok && Array.isArray(result.data) ? result.data : [];
+          
+          // 如果有商品详情，使用第一个作为默认选择
+          if (details.length > 0) {
+            productDetailId = details[0].id;
+            console.log(`动态获取到的商品详情ID: ${productDetailId}`);
+          }
+        } catch (e) {
+          console.error('获取商品详情失败:', e);
+        }
+      }
+      
+      console.log(`商品${index + 1}ID映射 - 传递给后端的productDetailId: ${productDetailId}, 原productId: ${item.productId}, 原itemId: ${item.id}`);
+      
+      if (!productDetailId) {
+        console.error('商品缺少必要的商品详情ID信息，无法创建订单:', item);
+        return Promise.reject(new Error('商品详情信息不完整，无法创建订单'));
+      }
+      
+      // 构建订单数据，严格按照后端API要求
+      // 注意：后端会自己生成订单号，前端传递的可能会被覆盖
+      const orderData = {
+        productDetailId: productDetailId, // 必须字段
+        // 不需要传递orderNumber，让后端生成
+        // 不需要设置userId，由URL参数传递
+        // 不需要设置status，后端会自己处理
+        totalPrice: (item.price * item.quantity).toFixed(2),
+        quantity: item.quantity
+      };
+
+      console.log(`商品${index + 1}订单请求数据:`, orderData);
+      
+      // 构建完整的请求URL
+      const requestUrl = `${apiBase}/api/order/add`;
+      console.log(`准备发送POST请求到: ${requestUrl}?userId=${userId}`);
+      
+      // 调用后端OrderApi的add方法，userId作为URL参数
+      return axios.post(requestUrl, orderData, {
+        params: { userId: userId },
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }).then(response => {
+        console.log(`商品${index + 1}订单创建响应:`, response.data);
+        return response;
+      }).catch(error => {
+        console.error(`商品${index + 1}订单创建失败:`, error.response ? error.response.data : error.message);
+        throw error;
+      });
+    });
+
+    console.log('等待所有订单创建完成...');
+    const results = await Promise.all(orderPromises);
+    console.log('所有订单创建完成，总数量:', results.length);
+    
+    // 验证订单创建结果
+    const successResults = results.filter(r => r && r.data && r.data.success !== false);
+    if (successResults.length !== results.length) {
+      console.warn('部分订单可能创建失败，成功数:', successResults.length, '总数:', results.length);
+    }
+    
+    return results;
+  } catch (error) {
+    console.error('创建订单失败:', error.response ? error.response.data : error.message);
+    throw error;
+  }
+};
+
+// 调用支付接口 - 根据订单号生成支付流水
+const processPayment = async (orderResults) => {
+  try {
+    const userId = getUserId();
+    if (!userId) {
+      throw new Error('未登录或用户信息丢失');
+    }
+    
+    // 验证订单结果是否有效
+    if (!orderResults || !Array.isArray(orderResults) || orderResults.length === 0) {
+      throw new Error('无效的订单结果');
+    }
+    
+    // 安全地获取后端返回的第一个订单的订单号，确保与数据库中存储的一致
+    // 注意：根据后端OrderServiceImpl的实现，订单号在data对象中
+    let backendOrderNumber = order.orderNo; // 默认值
+    
+    // 检查第一个订单响应
+    const firstOrder = orderResults[0];
+    if (firstOrder && firstOrder.data) {
+      // 尝试从不同位置获取订单号，适配后端可能的不同返回格式
+      if (firstOrder.data.orderNumber) {
+        backendOrderNumber = firstOrder.data.orderNumber;
+      } else if (firstOrder.data.data && firstOrder.data.data.orderNumber) {
+        backendOrderNumber = firstOrder.data.data.orderNumber;
+      } else if (firstOrder.data.orderNo) {
+        backendOrderNumber = firstOrder.data.orderNo;
+      }
+    }
+    
+    console.log('获取到的后端订单号:', backendOrderNumber);
+    if (backendOrderNumber === order.orderNo) {
+      console.warn('使用了前端生成的订单号，可能未成功获取后端生成的订单号');
+    }
+                               
+    console.log('准备生成支付流水，使用订单号:', backendOrderNumber);
+
+    // 计算支付金额
+    const actualAmount = parseFloat(calculateActualAmount());
+    
+    // 构建支付参数
+    const paymentParam = {
+      userId: userId,
+      orderNumber: backendOrderNumber,
+      totalAmount: actualAmount,
+      payAmount: actualAmount,
+      payType: 'ALIPAY' // 确保使用大写的支付类型
+    };
+
+    console.log('支付请求参数:', paymentParam);
+    
+    // 调用支付接口生成支付流水
+    const paymentUrl = `${apiBase}/api/alipay/pay`;
+    console.log(`发送支付请求到: ${paymentUrl}`);
+    
+    const response = await axios.post(paymentUrl, paymentParam, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log('支付流水生成成功，响应:', response.data);
+    
+    return response.data;
+  } catch (error) {
+    console.error('支付流水生成失败:', error.response ? error.response.data : error.message);
+    throw error;
+  }
+};
+
+// 实际支付宝支付处理
+const simulateAlipayPayment = async () => {
   isPaying.value = true;
   closeAlipayModal();
-  setTimeout(() => {
+  showTip('正在处理支付，请稍候...', false);
+  console.log('=== 开始支付流程 ===');
+
+  try {
+    // 1. 先创建订单 - 调用OrderApi生成订单并存入数据库
+    console.log('步骤1: 创建订单');
+    showTip('正在创建订单...', false);
+    
+    const orderResults = await createOrder();
+    
+    // 验证订单创建结果
+    if (!orderResults || orderResults.length === 0) {
+      throw new Error('订单创建失败，未返回任何订单数据');
+    }
+    
+    console.log('订单创建完成，继续支付流程');
+    
+    // 2. 然后根据订单号生成支付流水
+    console.log('步骤2: 生成支付流水');
+    showTip('正在处理支付...', false);
+    
+    const paymentResult = await processPayment(orderResults);
+    
+    // 3. 处理支付结果
+    console.log('步骤3: 处理支付结果');
     isPaying.value = false;
-    const isSuccess = Math.random() > 0.2;
-    if (isSuccess) {
+    closeTipModal();
+    
+    if (paymentResult && paymentResult.success) {
+      console.log('支付成功!');
       paymentStatus.value = 'success';
       order.status = 'paid';
+      
+      // 支付成功后，调用API删除购物车中已购买的商品
+      try {
+        console.log('开始清理购物车已购买商品');
+        // 获取购物车中已选中的商品ID
+        const selectedItemsJson = route.query.selectedItems || '[]';
+        console.log('购物车选中商品JSON:', selectedItemsJson);
+        
+        const selectedItemIds = JSON.parse(selectedItemsJson)
+          .map(item => item.id || item.cartItemId)
+          .filter(Boolean);
+        
+        console.log('需要删除的购物车商品ID列表:', selectedItemIds);
+        
+        // 批量删除已购买的商品
+        if (selectedItemIds.length > 0) {
+          for (const itemId of selectedItemIds) {
+            const deleteUrl = `${apiBase}/api/cart/${itemId}`;
+            console.log(`删除购物车商品: ${itemId}`);
+            await axios.delete(deleteUrl);
+          }
+          console.log('购物车已购买商品已清空');
+        } else {
+          console.log('没有需要删除的购物车商品');
+        }
+      } catch (error) {
+        console.error('清空购物车商品失败:', error.response ? error.response.data : error.message);
+        // 这里不影响支付结果，只是记录错误
+      }
     } else {
+      console.log('支付失败!', paymentResult);
       paymentStatus.value = 'fail';
-      failReason.value = '支付过程中断，请重试';
+      failReason.value = paymentResult?.message || '支付失败，请重试';
     }
-  }, 2000);
+  } catch (error) {
+    console.error('支付过程中发生错误:', error.response ? error.response.data : error.message);
+    isPaying.value = false;
+    closeTipModal();
+    paymentStatus.value = 'fail';
+    failReason.value = error.message || '支付处理失败，请稍后重试';
+  } finally {
+    console.log('=== 支付流程结束 ===');
+  }
 };
 
 // 重新支付
@@ -391,6 +699,12 @@ const initCountdown = () => {
     }
   }, 60000);
 };
+
+// 组件挂载时加载数据
+onMounted(() => {
+  loadCartData();
+  initCountdown();
+});
 
 // 定位与地址解析（核心功能）
 const getCurrentLocation = () => {
@@ -520,12 +834,16 @@ onUnmounted(() => {
 .order-tag { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; }
 .tag-pending { background: rgba(255,153,0,.1); color: #FAAD14; }
 .tag-normal { background: rgba(82,196,26,.1); color: #52C41A; }
+.goods-list { margin-bottom: 15px; }
 .goods-item { display: flex; align-items: center; gap: 16px; padding-bottom: 16px; border-bottom: 1px solid #f0f0f0; margin-bottom: 16px; }
+.goods-item:last-child { border-bottom: none; margin-bottom: 0; }
 .goods-img { width: 80px; height: 80px; object-fit: cover; border-radius: 4px; }
 .goods-info { flex: 1; }
 .goods-name { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
 .goods-spec { font-size: 12px; color: #666; }
 .goods-price { font-size: 14px; font-weight: 500; color: #1E90FF; }
+.goods-quantity { font-size: 12px; color: #666; margin-top: 4px; }
+.empty-goods { text-align: center; padding: 20px 0; color: #999; }
 .order-meta { display: flex; flex-direction: column; gap: 12px; }
 .meta-item { display: flex; }
 .meta-label { width: 80px; font-size: 14px; color: #666; flex-shrink: 0; }

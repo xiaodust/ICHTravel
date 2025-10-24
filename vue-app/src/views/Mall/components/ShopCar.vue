@@ -284,14 +284,46 @@ const toggleFavorite = (index) => {
 };
 
 // 添加推荐商品到购物车
-const addRecommendToCart = (item) => {
-    addCartItemToBackend({
-        productId: item.id,
-        name: item.name,
-        price: item.price,
-        image: item.image,
-        quantity: 1
-    });
+const addRecommendToCart = async (item) => {
+    try {
+        // 对于推荐商品，我们先尝试获取它的商品详情ID
+        let productDetailId = item.productDetailId || item.detailId || '';
+        
+        // 如果没有商品详情ID，尝试从商品详情接口获取
+        if (!productDetailId && item.id) {
+            const res = await axios.get('http://localhost:8080/api/productdetail/get', {
+                params: { productId: item.id }
+            });
+            const result = res.data || {};
+            const ok = result.isSuccess === true || result.success === true;
+            const details = ok && Array.isArray(result.data) ? result.data : [];
+            
+            // 如果有商品详情，使用第一个作为默认选择
+            if (details.length > 0) {
+                productDetailId = details[0].id;
+                console.log('推荐商品默认选择的商品详情ID:', productDetailId);
+            }
+        }
+        
+        addCartItemToBackend({
+            productId: item.id,
+            productDetailId: productDetailId,
+            name: item.name,
+            price: item.price,
+            image: item.image,
+            quantity: 1
+        });
+    } catch (e) {
+        console.error('处理推荐商品失败:', e);
+        // 即使获取商品详情失败，也尝试添加到购物车
+        addCartItemToBackend({
+            productId: item.id,
+            name: item.name,
+            price: item.price,
+            image: item.image,
+            quantity: 1
+        });
+    }
 };
 
 // 搜索功能
@@ -316,7 +348,24 @@ const goShopping = () => {
 };
 
 const goCheckout = () => {
-    router.push('/checkout');
+    // 获取选中的商品
+    const selectedItems = cartItems.value.filter(item => item.selected);
+    if (selectedItems.length === 0) {
+        alert('请选择要结算的商品');
+        return;
+    }
+    
+    // 将选中商品数据转换为URL参数
+    const checkoutData = {
+        selectedItems: JSON.stringify(selectedItems),
+        totalPrice: totalPrice.value.toFixed(2),
+        payablePrice: payablePrice.value.toFixed(2)
+    };
+    
+    router.push({
+        path: '/checkout',
+        query: checkoutData
+    });
 };
 
 // 路由实例
@@ -360,6 +409,7 @@ const normalizeItem = (ci) => {
     id: cid,
     cartItemId: cid,
     productId: ci.productId ?? ci.pid ?? null,
+    productDetailId: ci.productDetailId ?? ci.detailId ?? null, // 添加商品详情ID字段
     name: ci.productName || ci.name,
     image: resolveImg(ci.productImage || ci.image),
     spec: ci.spec || '默认规格',
@@ -399,12 +449,14 @@ const addCartItemToBackend = async (payload) => {
       id: payload.id || uuid(),
       cartId,
       productId: payload.productId,
+      productDetailId: payload.productDetailId || payload.detailId || '', // 添加商品详情ID字段
       productName: payload.name,
       productPrice: payload.price,
       productImage: payload.image,
       number: payload.quantity || 1,
       totalPrice: Number(((payload.price || 0) * (payload.quantity || 1)).toFixed(2))
     };
+    console.log('添加购物车参数:', body);
     const res = await axios.post(`${apiBase}/api/cart/add`, body);
     const result = res.data || {};
     // 以HTTP 2xx返回视为成功，避免误判

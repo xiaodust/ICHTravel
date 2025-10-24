@@ -31,9 +31,8 @@ public class OrderApi {
 
     @PostMapping("/add")
     @ResponseBody
-    public Result<Order> addOrder(@RequestBody Order order, HttpServletRequest request) {
+    public Result<Order> addOrder(@RequestBody Order order, @RequestParam String userId) {
         Result result=new Result();
-        result.setSuccess(true);
         if (order==null || StringUtils.isEmpty(order.getProductDetailId())) {
             result.setSuccess(false);
             result.setMessage("order is null or productDetailId is null");
@@ -41,7 +40,7 @@ public class OrderApi {
             return result;
         }
 
-        String userId=request.getParameter("userId");
+//        String userId=request.getParameter("userId");
         if (StringUtils.isEmpty(userId)) {
             result.setSuccess(false);
             result.setMessage("无登录信息");
@@ -52,6 +51,7 @@ public class OrderApi {
         order.setUserId(userId);
         Order orderResult = orderService.add(order);
         result.setData(orderResult);
+        result.setSuccess(true);
         return result;
     }
 

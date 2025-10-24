@@ -492,53 +492,11 @@ const handleSort = () => {
   }, 500);
 };
 
-// 加入购物车
-const addToCart = async (product) => {
-  try {
-    const apiBase = 'http://localhost:8080';
-    // 从登录态获取用户ID作为购物车ID（不再使用 demo-user）
-    const getUserId = () => {
-      const sid = sessionStorage.getItem('userId');
-      if (sid) return sid;
-      try {
-        const ui = localStorage.getItem('userInfo');
-        if (ui) {
-          const parsed = JSON.parse(ui);
-          if (parsed && parsed.id) return parsed.id;
-        }
-      } catch (_) {}
-      return null;
-    };
-    const cartId = getUserId();
-    if (!cartId) {
-      alert('请先登录后再添加到购物车');
-      return;
-    }
-    const resolveImg = (url) => {
-      if (!url) return '';
-      if (url.startsWith('/static')) return apiBase + url.replace('/static', '');
-      if (url.startsWith('/uploads')) return apiBase + url;
-      return url;
-    };
-    const id = window.crypto?.randomUUID?.() || ('ci-' + Date.now() + '-' + Math.floor(Math.random()*1e6));
-    const body = {
-      id,
-      cartId,
-      productId: product.id,
-      productName: product.name,
-      productPrice: product.currentPrice,
-      productImage: resolveImg(product.imgUrl),
-      number: 1,
-      totalPrice: Number((product.currentPrice * 1).toFixed(2))
-    };
-    const res = await axios.post(`${apiBase}/api/cart/add`, body);
-    const result = res.data || {};
-    // 以HTTP 2xx返回视为成功，避免误判
-    alert(`${product.name} 已加入购物车`);
-  } catch (e) {
-    console.error('加入购物车接口失败:', e);
-    alert('加入购物车失败，请稍后重试');
-  }
+// 加入购物车 - 修改为跳转到商品详情页选择规格
+const addToCart = (product) => {
+  // 直接跳转到商品详情页，让用户选择规格后再加入购物车
+  console.log('商品列表页点击加入购物车，跳转到详情页:', product.id);
+  router.push(`/heritage-mall/${product.id}?action=add-to-cart`);
 };
 
 // 跳转到商品详情页（路由格式：heritage-mall/{id}）

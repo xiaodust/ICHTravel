@@ -30,12 +30,25 @@ public class CartItemServiceImpl implements CartItemService {
             cartItem.setId(UUID.randomUUID().toString());
         }
 
+        // 先尝试通过productId查找商品
         CartItemDO cartItemDO=cartItemDAO.findByProductId(cartItem.getProductId(),cartItem.getCartId());
-        if (cartItemDO!=null){
+        
+        // 如果找到了相同productId的商品，但没有相同的productDetailId，那么不合并数量
+        // 这样不同规格的同一商品会作为不同的购物车项
+        if (cartItemDO!=null && 
+            ((cartItem.getProductDetailId() == null && cartItemDO.getProductDetailId() == null) || 
+             (cartItem.getProductDetailId() != null && cartItem.getProductDetailId().equals(cartItemDO.getProductDetailId())))) {
+            // 只在相同商品规格的情况下合并数量
             cartItemDO.setNumber(cartItem.getNumber()+cartItemDO.getNumber());
             cartItemDO.setTotalPrice(cartItem.getTotalPrice()+cartItemDO.getTotalPrice());
+            // 更新productDetailId字段（如果传入了新值）
+            if (cartItem.getProductDetailId() != null && !cartItem.getProductDetailId().isEmpty()) {
+                cartItemDO.setProductDetailId(cartItem.getProductDetailId());
+            }
             return cartItemDAO.update(cartItemDO);
         }
+        
+        // 如果没有找到相同规格的商品，或者找到了但规格不同，则插入新记录
         cartItem.setGmtCreated(LocalDateTime.now());
         cartItem.setGmtModified(LocalDateTime.now());
         return cartItemDAO.insert(new CartItemDO(cartItem));
